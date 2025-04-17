@@ -5,7 +5,7 @@ import { Moon, Sun, Laptop, Palette } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useThemeStore, Theme, ColorScheme } from '@/lib/theme';
 
-const themes: { value: Theme; label: string; icon: JSX.Element }[] = [
+const themes: { value: Theme; label: string; icon: React.ReactElement }[] = [
   { value: 'light', label: 'Light', icon: <Sun className="w-4 h-4" /> },
   { value: 'dark', label: 'Dark', icon: <Moon className="w-4 h-4" /> },
   { value: 'system', label: 'System', icon: <Laptop className="w-4 h-4" /> },
