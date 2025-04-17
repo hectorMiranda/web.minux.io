@@ -1,6 +1,6 @@
 declare module 'gsap/dist/gsap' {
   export interface TweenVars {
-    [key: string]: number | string | boolean | object;
+    [key: string]: number | string | boolean | object | (() => void) | undefined;
   }
 
   export interface TweenConfig {
