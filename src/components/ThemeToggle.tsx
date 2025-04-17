@@ -1,4 +1,6 @@
-import { useState } from 'react';
+'use client';
+
+import React, { useState } from 'react';
 import { Moon, Sun, Laptop, Palette } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useThemeStore, Theme, ColorScheme } from '@/lib/theme';

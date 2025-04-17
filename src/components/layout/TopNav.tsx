@@ -1,3 +1,5 @@
+'use client';
+
 import { ThemeToggle } from '../ThemeToggle';
 import { UserPanel } from '../UserPanel';
 

@@ -1,3 +1,5 @@
+'use client';
+
 import { useState } from 'react';
 import { User, Shield, LogOut } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';

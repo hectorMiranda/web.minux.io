@@ -1,3 +1,5 @@
+'use client';
+
 import { motion } from 'framer-motion';
 import { StatCard } from './StatCard';
 import { Cpu, HardDrive as Memory, Network, Shield, Terminal, Clock } from 'lucide-react';

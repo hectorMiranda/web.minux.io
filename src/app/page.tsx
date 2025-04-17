@@ -5,19 +5,25 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { LoadingCubes } from '../components/LoadingCubes';
 import { PasswordDialog } from '../components/auth/PasswordDialog';
 import { AuthCube } from '../components/auth/AuthCube';
-import { Dashboard } from '../components/dashboard/Dashboard';
-import { AppLayout } from '../components/layout/AppLayout';
 import { useAuthStore } from '@/lib/auth';
+import { useRouter } from 'next/navigation';
 
 export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const [mounted, setMounted] = useState(false);
   const { isAuthenticated, setAuthenticated } = useAuthStore();
+  const router = useRouter();
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.push('/dashboard');
+    }
+  }, [isAuthenticated, router]);
 
   const handleLoadingFinish = () => {
     setIsLoading(false);
@@ -39,14 +45,6 @@ export default function Home() {
   };
 
   if (!mounted) return null;
-
-  if (isAuthenticated) {
-    return (
-      <AppLayout>
-        <Dashboard />
-      </AppLayout>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-[#0B1120] flex items-center justify-center">
