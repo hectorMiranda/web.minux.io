@@ -15,10 +15,14 @@ import {
   Power,
   Wifi,
   Gauge,
+  Shield,
+  Users,
+  LogOut,
+  Menu
 } from 'lucide-react';
 
 interface MenuItem {
-  icon: JSX.Element;
+  icon: React.ReactElement;
   label: string;
   href: string;
   description?: string;
