@@ -2,10 +2,10 @@
 
 import { motion } from 'framer-motion';
 import { Battery, BatteryCharging, Power, Activity, Clock, Zap } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 export default function PowerPage() {
-  const [powerStats, setPowerStats] = useState({
+  const [powerStats] = useState({
     cpuPower: 2.5,
     temperature: 45,
     uptime: '5 days 3 hours',

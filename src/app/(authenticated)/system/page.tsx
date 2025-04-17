@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Activity, Cpu, HardDrive as Memory, Clock } from 'lucide-react';
+import { Activity, Cpu, HardDrive as Memory } from 'lucide-react';
 
 export default function SystemPage() {
   return (

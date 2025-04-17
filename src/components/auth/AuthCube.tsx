@@ -112,7 +112,7 @@ export const AuthCube = ({ onCubeClick, isDialogOpen }: AuthCubeProps) => {
       sceneRef.current = null;
       rendererRef.current = null;
     };
-  }, []); // Only run once on mount
+  }, [isDialogOpen, onCubeClick]);
 
   // Handle dialog state changes
   useEffect(() => {

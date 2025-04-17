@@ -9,6 +9,9 @@ export function Background3D() {
 
   useEffect(() => {
     if (!containerRef.current) return;
+    
+    // Store the reference to avoid the warning
+    const container = containerRef.current;
 
     // Scene setup
     const scene = new THREE.Scene();
@@ -17,7 +20,7 @@ export function Background3D() {
     
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setClearColor(0x000000, 0);
-    containerRef.current.appendChild(renderer.domElement);
+    container.appendChild(renderer.domElement);
 
     // Create geometric objects
     const objects: THREE.Mesh[] = [];
@@ -93,13 +96,13 @@ export function Background3D() {
     // Cleanup
     return () => {
       window.removeEventListener('resize', handleResize);
-      containerRef.current?.removeChild(renderer.domElement);
+      container.removeChild(renderer.domElement);
       objects.forEach(obj => {
         obj.geometry.dispose();
         (obj.material as THREE.Material).dispose();
       });
     };
-  }, []);
+  }, [window]);
 
   return (
     <motion.div

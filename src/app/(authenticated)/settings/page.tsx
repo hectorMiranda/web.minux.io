@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Settings, Shield, Bell, Moon, Sun, Globe, Lock, User, Power } from 'lucide-react';
+import { Settings, Shield, Bell, Moon, Globe, Lock, User, Power } from 'lucide-react';
 
 export default function SettingsPage() {
   const [notifications, setNotifications] = useState(true);

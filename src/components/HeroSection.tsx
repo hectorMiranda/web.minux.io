@@ -35,6 +35,9 @@ export function HeroSection() {
 
   useEffect(() => {
     if (!containerRef.current) return;
+    
+    // Store the reference to avoid the warning
+    const container = containerRef.current;
 
     // Scene setup
     const scene = new THREE.Scene();
@@ -44,7 +47,7 @@ export function HeroSection() {
     
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setClearColor(0x000000, 0);
-    containerRef.current.appendChild(renderer.domElement);
+    container.appendChild(renderer.domElement);
 
     // Create cube with separate materials for each face
     const geometry = new THREE.BoxGeometry(2, 2, 2);
@@ -168,8 +171,8 @@ export function HeroSection() {
       materials.forEach(material => material.dispose());
       geometry.dispose();
       renderer.dispose();
-      if (containerRef.current && rendererRef.current) {
-        containerRef.current.removeChild(rendererRef.current.domElement);
+      if (container && rendererRef.current) {
+        container.removeChild(rendererRef.current.domElement);
       }
     };
   }, [handleCubeClick]);
