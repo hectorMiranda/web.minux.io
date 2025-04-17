@@ -7,12 +7,13 @@ import { PasswordDialog } from '../components/auth/PasswordDialog';
 import { AuthCube } from '../components/auth/AuthCube';
 import { Dashboard } from '../components/dashboard/Dashboard';
 import { AppLayout } from '../components/layout/AppLayout';
+import { useAuthStore } from '@/lib/auth';
 
 export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const { isAuthenticated, setAuthenticated } = useAuthStore();
 
   useEffect(() => {
     setMounted(true);
@@ -33,7 +34,7 @@ export default function Home() {
 
   const handleAuthentication = (password: string) => {
     if (password === process.env.NEXT_PUBLIC_SYSTEM_PASSWORD) {
-      setIsAuthenticated(true);
+      setAuthenticated(true);
       setShowPasswordDialog(false);
     }
   };

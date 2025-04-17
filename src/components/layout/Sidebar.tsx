@@ -1,100 +1,137 @@
-import { motion } from 'framer-motion';
+import { useState } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { motion } from 'framer-motion';
 import {
-  LayoutDashboard,
-  Activity,
-  Database,
-  Network,
-  Shield,
+  Home,
+  Settings,
   Terminal,
-  MessageSquare,
-  Settings
+  Cpu,
+  Thermometer,
+  Network,
+  HardDrive,
+  Power,
+  Wifi,
+  Gauge,
 } from 'lucide-react';
 
-interface NavItemProps {
-  icon: React.ReactNode;
+interface MenuItem {
+  icon: JSX.Element;
   label: string;
-  isActive?: boolean;
+  href: string;
+  description?: string;
 }
 
-const NavItem = ({ icon, label, isActive }: NavItemProps) => (
-  <Link
-    href="#"
-    className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-      isActive 
-        ? 'text-primary bg-primary/10'
-        : 'text-gray-400 hover:text-primary hover:bg-primary/5'
-    }`}
-  >
-    {icon}
-    <span>{label}</span>
-  </Link>
-);
+const menuItems: MenuItem[] = [
+  {
+    icon: <Home className="w-5 h-5" />,
+    label: 'Dashboard',
+    href: '/dashboard',
+    description: 'System overview and status',
+  },
+  {
+    icon: <Cpu className="w-5 h-5" />,
+    label: 'System',
+    href: '/system',
+    description: 'CPU, memory, and processes',
+  },
+  {
+    icon: <Thermometer className="w-5 h-5" />,
+    label: 'Sensors',
+    href: '/sensors',
+    description: 'Temperature and voltage monitoring',
+  },
+  {
+    icon: <Network className="w-5 h-5" />,
+    label: 'Network',
+    href: '/network',
+    description: 'Network interfaces and statistics',
+  },
+  {
+    icon: <Wifi className="w-5 h-5" />,
+    label: 'Wi-Fi',
+    href: '/wifi',
+    description: 'Wireless network configuration',
+  },
+  {
+    icon: <HardDrive className="w-5 h-5" />,
+    label: 'Storage',
+    href: '/storage',
+    description: 'Disk usage and management',
+  },
+  {
+    icon: <Terminal className="w-5 h-5" />,
+    label: 'Console',
+    href: '/console',
+    description: 'System terminal access',
+  },
+  {
+    icon: <Gauge className="w-5 h-5" />,
+    label: 'Performance',
+    href: '/performance',
+    description: 'System performance metrics',
+  },
+  {
+    icon: <Settings className="w-5 h-5" />,
+    label: 'Settings',
+    href: '/settings',
+    description: 'System configuration',
+  },
+  {
+    icon: <Power className="w-5 h-5" />,
+    label: 'Power',
+    href: '/power',
+    description: 'Power management and control',
+  },
+];
 
 export const Sidebar = () => {
+  const pathname = usePathname();
+  const [hoveredItem, setHoveredItem] = useState<string | null>(null);
+
   return (
-    <div className="w-64 bg-[#0B1120] border-r border-white/10 p-4 flex flex-col h-screen">
-      {/* Logo */}
-      <div className="mb-8">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="flex items-center gap-2 px-4"
-        >
-          <div className="text-primary text-2xl">⬡</div>
-          <div className="text-primary font-bold">MINUX OS</div>
-        </motion.div>
+    <div className="w-64 border-r border-white/10 h-screen overflow-y-auto py-4">
+      <div className="px-3 mb-8">
+        <div className="text-xl font-bold px-3">Minux</div>
+        <div className="text-sm text-white/50 px-3">Raspberry Pi Control</div>
       </div>
 
-      {/* Navigation */}
-      <nav className="space-y-1">
-        <NavItem icon={<LayoutDashboard size={20} />} label="Dashboard" isActive />
-        <NavItem icon={<Activity size={20} />} label="Diagnostics" />
-        <NavItem icon={<Database size={20} />} label="Data Center" />
-        <NavItem icon={<Network size={20} />} label="Network" />
-        <NavItem icon={<Shield size={20} />} label="Security" />
-        <NavItem icon={<Terminal size={20} />} label="Console" />
-        <NavItem icon={<MessageSquare size={20} />} label="Communications" />
+      <nav className="space-y-1 px-3">
+        {menuItems.map((item) => {
+          const isActive = pathname === item.href;
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="relative block"
+              onMouseEnter={() => setHoveredItem(item.href)}
+              onMouseLeave={() => setHoveredItem(null)}
+            >
+              <div
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+                  isActive ? 'bg-white/10' : 'hover:bg-white/5'
+                }`}
+              >
+                <div className={`${isActive ? 'text-primary' : 'text-white/50'}`}>
+                  {item.icon}
+                </div>
+                <span className={isActive ? 'font-medium' : ''}>
+                  {item.label}
+                </span>
+              </div>
+              {hoveredItem === item.href && item.description && (
+                <motion.div
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="absolute left-full ml-2 top-0 z-50 w-48 p-2 rounded-lg bg-[#0A192F] border border-white/10 shadow-lg"
+                >
+                  <div className="text-sm">{item.description}</div>
+                </motion.div>
+              )}
+            </Link>
+          );
+        })}
       </nav>
-
-      {/* System Status */}
-      <div className="mt-8 px-4">
-        <h3 className="text-xs font-semibold text-gray-400 mb-3">SYSTEM STATUS</h3>
-        <div className="space-y-3">
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-gray-400">Core Systems</span>
-            <div className="flex items-center">
-              <div className="h-1 w-16 bg-primary/20 rounded-full overflow-hidden">
-                <div className="h-full w-[84%] bg-primary rounded-full" />
-              </div>
-              <span className="text-xs text-primary ml-2">84%</span>
-            </div>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-gray-400">Security</span>
-            <div className="flex items-center">
-              <div className="h-1 w-16 bg-green-500/20 rounded-full overflow-hidden">
-                <div className="h-full w-[75%] bg-green-500 rounded-full" />
-              </div>
-              <span className="text-xs text-green-500 ml-2">75%</span>
-            </div>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-gray-400">Network</span>
-            <div className="flex items-center">
-              <div className="h-1 w-16 bg-blue-500/20 rounded-full overflow-hidden">
-                <div className="h-full w-[86%] bg-blue-500 rounded-full" />
-              </div>
-              <span className="text-xs text-blue-500 ml-2">86%</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Settings */}
-      <div className="mt-auto">
-        <NavItem icon={<Settings size={20} />} label="Settings" />
-      </div>
     </div>
   );
 }; 

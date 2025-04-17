@@ -1,6 +1,6 @@
 import { ReactNode } from 'react';
 import { Sidebar } from './Sidebar';
-import { TopBar } from './TopBar';
+import { TopNav } from './TopNav';
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -11,7 +11,7 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
     <div className="flex h-screen bg-[#0B1120]">
       <Sidebar />
       <div className="flex-1 flex flex-col">
-        <TopBar />
+        <TopNav />
         <main className="flex-1 overflow-auto">
           {children}
         </main>
