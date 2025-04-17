@@ -4,21 +4,17 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
-import {
-  Home,
-  Settings,
-  Terminal,
-  Cpu,
-  Thermometer,
-  Network,
-  HardDrive,
-  Power,
+import { 
+  Home, 
+  Settings, 
+  Power, 
+  Cpu, 
   Wifi,
   Gauge,
-  Shield,
-  Users,
-  LogOut,
-  Menu
+  Terminal,
+  Thermometer,
+  Network,
+  HardDrive
 } from 'lucide-react';
 
 interface MenuItem {
