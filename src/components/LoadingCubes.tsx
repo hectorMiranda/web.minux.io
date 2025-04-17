@@ -12,6 +12,9 @@ export const LoadingCubes = ({ onFinish }: LoadingCubesProps) => {
   useEffect(() => {
     if (!containerRef.current) return;
 
+    // Store the reference to avoid the warning
+    const container = containerRef.current;
+
     // Scene setup
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -19,7 +22,7 @@ export const LoadingCubes = ({ onFinish }: LoadingCubesProps) => {
     
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setClearColor(0x0B1120, 1);
-    containerRef.current.appendChild(renderer.domElement);
+    container.appendChild(renderer.domElement);
 
     // Create cube geometry and materials
     const cubeGeometry = new THREE.BoxGeometry(1, 1, 1);
@@ -143,8 +146,8 @@ export const LoadingCubes = ({ onFinish }: LoadingCubesProps) => {
 
     return () => {
       window.removeEventListener('resize', handleResize);
-      if (containerRef.current?.contains(renderer.domElement)) {
-        containerRef.current.removeChild(renderer.domElement);
+      if (container.contains(renderer.domElement)) {
+        container.removeChild(renderer.domElement);
       }
       renderer.dispose();
       cubeGeometry.dispose();

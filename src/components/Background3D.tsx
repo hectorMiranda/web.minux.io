@@ -102,7 +102,7 @@ export function Background3D() {
         (obj.material as THREE.Material).dispose();
       });
     };
-  }, [window]);
+  }, []);
 
   return (
     <motion.div
