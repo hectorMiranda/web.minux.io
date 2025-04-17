@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import gsap from 'gsap/dist/gsap';
 
@@ -7,37 +7,19 @@ interface AuthCubeProps {
   isDialogOpen: boolean;
 }
 
-type Position = [number, number, number];
-type Rotation = [number, number, number];
-
-interface FacePosition {
-  position: Position;
-  rotation: Rotation;
-}
-
 export const AuthCube = ({ onCubeClick, isDialogOpen }: AuthCubeProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
-  const [isUnfolding, setIsUnfolding] = useState(false);
-  const animationRef = useRef<gsap.core.Timeline | null>(null);
+  const sceneRef = useRef<{
+    scene: THREE.Scene;
+    cube: THREE.Mesh;
+    wireframe: THREE.LineSegments;
+    animate: () => void;
+  } | null>(null);
 
+  // Initialize the scene
   useEffect(() => {
-    // If dialog is closed and we were unfolded, reverse the animation
-    if (!isDialogOpen && isUnfolding) {
-      if (animationRef.current) {
-        animationRef.current.reverse();
-        animationRef.current.eventCallback('onReverseComplete', () => {
-          setIsUnfolding(false);
-        });
-      }
-    }
-  }, [isDialogOpen]);
-
-  useEffect(() => {
-    // If we already have a renderer, don't initialize again
-    if (!containerRef.current || rendererRef.current) {
-      return;
-    }
+    if (!containerRef.current || rendererRef.current) return;
 
     // Scene setup
     const scene = new THREE.Scene();
@@ -59,50 +41,17 @@ export const AuthCube = ({ onCubeClick, isDialogOpen }: AuthCubeProps) => {
     
     containerRef.current.appendChild(renderer.domElement);
 
-    // Create cube faces
-    const size = 2;
-    const geometry = new THREE.BoxGeometry(size, size, size);
-    
-    // Create materials for each face with different colors
-    const materials = [
-      new THREE.MeshBasicMaterial({ color: 0x00FF88, transparent: true, opacity: 0.2 }), // right
-      new THREE.MeshBasicMaterial({ color: 0x00FF88, transparent: true, opacity: 0.2 }), // left
-      new THREE.MeshBasicMaterial({ color: 0x00FF88, transparent: true, opacity: 0.2 }), // top
-      new THREE.MeshBasicMaterial({ color: 0x00FF88, transparent: true, opacity: 0.2 }), // bottom
-      new THREE.MeshBasicMaterial({ color: 0x00FF88, transparent: true, opacity: 0.2 }), // front
-      new THREE.MeshBasicMaterial({ color: 0x00FF88, transparent: true, opacity: 0.2 }), // back
-    ];
+    // Create cube geometry and materials
+    const geometry = new THREE.BoxGeometry(2, 2, 2);
+    const materials = Array(6).fill(null).map(() => 
+      new THREE.MeshBasicMaterial({ 
+        color: 0x00FF88, 
+        transparent: true, 
+        opacity: 0.2 
+      })
+    );
 
-    // Create individual faces for unfolding
-    const faces: THREE.Mesh[] = [];
-    const faceGeometry = new THREE.PlaneGeometry(size, size);
-    
-    // Create 6 faces with positions matching the cube
-    const facePositions: FacePosition[] = [
-      { position: [size/2, 0, 0] as Position, rotation: [0, Math.PI/2, 0] as Rotation }, // right
-      { position: [-size/2, 0, 0] as Position, rotation: [0, -Math.PI/2, 0] as Rotation }, // left
-      { position: [0, size/2, 0] as Position, rotation: [-Math.PI/2, 0, 0] as Rotation }, // top
-      { position: [0, -size/2, 0] as Position, rotation: [Math.PI/2, 0, 0] as Rotation }, // bottom
-      { position: [0, 0, size/2] as Position, rotation: [0, 0, 0] as Rotation }, // front
-      { position: [0, 0, -size/2] as Position, rotation: [0, Math.PI, 0] as Rotation }, // back
-    ];
-
-    facePositions.forEach((faceData, index) => {
-      const faceMaterial = new THREE.MeshBasicMaterial({ 
-        color: 0x00FF88,
-        transparent: true,
-        opacity: 0.2,
-        side: THREE.DoubleSide
-      });
-      const face = new THREE.Mesh(faceGeometry, faceMaterial);
-      face.position.set(...faceData.position);
-      face.rotation.set(...faceData.rotation);
-      faces.push(face);
-      scene.add(face);
-      face.visible = false;
-    });
-
-    // Create wireframe cube
+    // Create wireframe
     const edges = new THREE.EdgesGeometry(geometry);
     const lineMaterial = new THREE.LineBasicMaterial({ 
       color: 0x00FF88,
@@ -118,144 +67,79 @@ export const AuthCube = ({ onCubeClick, isDialogOpen }: AuthCubeProps) => {
 
     camera.position.z = 5;
 
-    // Animation states
-    let isAnimating = false;
-    let baseRotationX = 0;
-    let baseRotationY = 0;
-
-    const unfoldCube = () => {
-      if (isAnimating) return;
-      isAnimating = true;
-      setIsUnfolding(true);
-
-      // Store current rotation
-      baseRotationX = cube.rotation.x;
-      baseRotationY = cube.rotation.y;
-
-      // Create a timeline for the animation
-      const timeline = gsap.timeline({
-        onComplete: () => {
-          onCubeClick();
-        },
-        onReverseComplete: () => {
-          cube.visible = true;
-          wireframe.visible = true;
-          faces.forEach(face => face.visible = false);
-          isAnimating = false;
-        }
-      });
-
-      // Add bounce animation
-      timeline.to(cube.position, {
+    // Handle click with bounce animation
+    const handleClick = (event: MouseEvent) => {
+      event.preventDefault();
+      if (isDialogOpen) return;
+      
+      // Quick bounce animation
+      gsap.to(cube.position, {
         y: 0.5,
         duration: 0.2,
         ease: "power2.out",
         yoyo: true,
         repeat: 1,
-        onComplete: () => {
-          cube.visible = false;
-          wireframe.visible = false;
-          faces.forEach(face => face.visible = true);
-        }
+        onComplete: onCubeClick
       });
-
-      // Add unfolding animations
-      faces.forEach((face, index) => {
-        const targetPosition: Position = [...facePositions[index].position];
-
-        switch(index) {
-          case 0: // right
-            targetPosition[0] += size;
-            break;
-          case 1: // left
-            targetPosition[0] -= size;
-            break;
-          case 2: // top
-            targetPosition[1] += size;
-            break;
-          case 3: // bottom
-            targetPosition[1] -= size;
-            break;
-          case 4: // front
-            targetPosition[2] += size;
-            break;
-          case 5: // back
-            targetPosition[2] -= size;
-            break;
-        }
-
-        timeline.to(face.position, {
-          x: targetPosition[0],
-          y: targetPosition[1],
-          z: targetPosition[2],
-          duration: 1,
-          ease: "power2.inOut"
-        }, ">-0.8");
-
-        timeline.to(face.material, {
-          opacity: 0,
-          duration: 0.5,
-          ease: "power2.in"
-        }, ">-0.5");
-      });
-
-      animationRef.current = timeline;
     };
-
-    // Handle click events
-    const raycaster = new THREE.Raycaster();
-    const mouse = new THREE.Vector2();
-
-    const handleClick = (event: MouseEvent) => {
-      if (isAnimating) return;
-
-      const rect = renderer.domElement.getBoundingClientRect();
-      mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-      mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-
-      raycaster.setFromCamera(mouse, camera);
-      const intersects = raycaster.intersectObjects([cube, wireframe]);
-
-      if (intersects.length > 0) {
-        unfoldCube();
-      }
-    };
-
-    renderer.domElement.addEventListener('click', handleClick);
 
     // Animation loop
-    let frame: number;
     const animate = () => {
-      frame = requestAnimationFrame(animate);
+      if (!rendererRef.current) return;
+      requestAnimationFrame(animate);
+      renderer.render(scene, camera);
+    };
 
-      if (!isUnfolding) {
+    // Store scene objects for state updates
+    sceneRef.current = {
+      scene,
+      cube,
+      wireframe,
+      animate
+    };
+
+    // Add event listeners
+    renderer.domElement.addEventListener('click', handleClick);
+    animate();
+
+    // Cleanup
+    return () => {
+      renderer.domElement.removeEventListener('click', handleClick);
+      renderer.dispose();
+      materials.forEach(material => material.dispose());
+      geometry.dispose();
+      edges.dispose();
+      sceneRef.current = null;
+      rendererRef.current = null;
+    };
+  }, []); // Only run once on mount
+
+  // Handle dialog state changes
+  useEffect(() => {
+    if (!sceneRef.current) return;
+    const { cube, wireframe } = sceneRef.current;
+
+    // Update rotation animation based on dialog state
+    const updateRotation = () => {
+      if (!isDialogOpen) {
         cube.rotation.x += 0.01;
         cube.rotation.y += 0.01;
         wireframe.rotation.copy(cube.rotation);
       }
-
-      renderer.render(scene, camera);
+      requestAnimationFrame(updateRotation);
     };
-
-    animate();
+    updateRotation();
 
     return () => {
-      cancelAnimationFrame(frame);
-      if (rendererRef.current) {
-        rendererRef.current.dispose();
-        rendererRef.current.domElement.removeEventListener('click', handleClick);
-        rendererRef.current = null;
-      }
-      if (containerRef.current?.firstChild) {
-        containerRef.current.removeChild(containerRef.current.firstChild);
-      }
-      if (animationRef.current) {
-        animationRef.current.kill();
-      }
+      cube.rotation.set(0, 0, 0);
+      wireframe.rotation.set(0, 0, 0);
     };
-  }, [onCubeClick, isUnfolding]);
+  }, [isDialogOpen]);
 
   return (
-    <div ref={containerRef} className="w-[300px] h-[300px]" style={{ isolation: 'isolate' }} />
+    <div 
+      ref={containerRef} 
+      style={{ width: '300px', height: '300px', cursor: isDialogOpen ? 'default' : 'pointer' }}
+    />
   );
 }; 

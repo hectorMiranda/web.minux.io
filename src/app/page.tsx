@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { LoadingAnimation } from '../components/LoadingAnimation';
+import { motion, AnimatePresence } from 'framer-motion';
+import { LoadingCubes } from '../components/LoadingCubes';
 import { PasswordDialog } from '../components/auth/PasswordDialog';
 import { AuthCube } from '../components/auth/AuthCube';
 import { Dashboard } from '../components/dashboard/Dashboard';
@@ -17,12 +17,11 @@ export default function Home() {
 
   useEffect(() => {
     setMounted(true);
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 2000);
-
-    return () => clearTimeout(timer);
   }, []);
+
+  const handleLoadingFinish = () => {
+    setIsLoading(false);
+  };
 
   const handleCubeClick = () => {
     setShowPasswordDialog(true);
@@ -41,10 +40,6 @@ export default function Home() {
 
   if (!mounted) return null;
 
-  if (isLoading) {
-    return <LoadingAnimation />;
-  }
-
   if (isAuthenticated) {
     return (
       <AppLayout>
@@ -55,12 +50,27 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-[#0B1120] flex items-center justify-center">
-      <div key="auth-cube-container">
-        <AuthCube 
-          onCubeClick={handleCubeClick} 
-          isDialogOpen={showPasswordDialog}
-        />
-      </div>
+      <AnimatePresence mode="wait">
+        {isLoading ? (
+          <LoadingCubes key="loading" onFinish={handleLoadingFinish} />
+        ) : (
+          <motion.div 
+            key="auth-cube"
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ 
+              type: "spring",
+              duration: 0.8,
+              delay: 0.2
+            }}
+          >
+            <AuthCube 
+              onCubeClick={handleCubeClick} 
+              isDialogOpen={showPasswordDialog}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
       {showPasswordDialog && (
         <PasswordDialog 
           onAuthenticate={handleAuthentication}
