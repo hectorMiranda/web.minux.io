@@ -1,3 +1,5 @@
+'use client';
+
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import gsap from 'gsap/dist/gsap';
@@ -21,6 +23,10 @@ export const AuthCube = ({ onCubeClick, isDialogOpen }: AuthCubeProps) => {
   useEffect(() => {
     if (!containerRef.current || rendererRef.current) return;
 
+    // Get container dimensions
+    const containerWidth = Math.min(300, window.innerWidth * 0.8);
+    const containerHeight = containerWidth; // Keep it square
+
     // Scene setup
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
@@ -31,7 +37,7 @@ export const AuthCube = ({ onCubeClick, isDialogOpen }: AuthCubeProps) => {
     });
     
     rendererRef.current = renderer;
-    renderer.setSize(300, 300);
+    renderer.setSize(containerWidth, containerHeight);
     renderer.setClearColor(0x000000, 0);
 
     // Remove any existing canvas elements
@@ -98,12 +104,26 @@ export const AuthCube = ({ onCubeClick, isDialogOpen }: AuthCubeProps) => {
       animate
     };
 
+    // Handle window resize
+    const handleResize = () => {
+      if (!containerRef.current || !rendererRef.current) return;
+      
+      const newWidth = Math.min(300, window.innerWidth * 0.8);
+      const newHeight = newWidth;
+      
+      renderer.setSize(newWidth, newHeight);
+      containerRef.current.style.width = `${newWidth}px`;
+      containerRef.current.style.height = `${newHeight}px`;
+    };
+
     // Add event listeners
+    window.addEventListener('resize', handleResize);
     renderer.domElement.addEventListener('click', handleClick);
     animate();
 
     // Cleanup
     return () => {
+      window.removeEventListener('resize', handleResize);
       renderer.domElement.removeEventListener('click', handleClick);
       renderer.dispose();
       materials.forEach(material => material.dispose());
@@ -139,7 +159,18 @@ export const AuthCube = ({ onCubeClick, isDialogOpen }: AuthCubeProps) => {
   return (
     <div 
       ref={containerRef} 
-      style={{ width: '300px', height: '300px', cursor: isDialogOpen ? 'default' : 'pointer' }}
+      style={{ 
+        width: '300px', 
+        height: '300px', 
+        maxWidth: '80vw',
+        maxHeight: '80vw',
+        margin: '0 auto',
+        position: 'relative',
+        cursor: isDialogOpen ? 'default' : 'pointer',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center'
+      }} 
     />
   );
 }; 
