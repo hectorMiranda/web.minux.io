@@ -81,7 +81,7 @@ export function JsonViewer({ content }: JsonViewerProps) {
             <>
               {entries.map(([key, val]) => (
                 <div key={key}>
-                  {indent}  "{key}": {renderJsonValue(val, `${path}.${key}`, level + 1)}
+                  {indent}  &quot;{key}&quot;: {renderJsonValue(val, `${path}.${key}`, level + 1)}
                 </div>
               ))}
               <div>{indent}{'}'}</div>
@@ -94,7 +94,7 @@ export function JsonViewer({ content }: JsonViewerProps) {
 
     return (
       <span className={typeof value === 'string' ? 'text-green-400' : 'text-blue-400'}>
-        {typeof value === 'string' ? `"${value}"` : String(value)}
+        {typeof value === 'string' ? <>&quot;{value}&quot;</> : String(value)}
       </span>
     );
   };
