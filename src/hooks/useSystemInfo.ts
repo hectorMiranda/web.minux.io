@@ -2,52 +2,46 @@ import { useState, useEffect } from 'react';
 
 interface SystemInfo {
   platform: string;
-  userAgent: string;
-  language: string;
-  vendor: string;
+  arch: string;
+  hostname: string;
+  type: string;
+  release: string;
+  cpus: number;
+  totalMemory: number;
+  freeMemory: number;
 }
 
 export const useSystemInfo = () => {
-  const [systemInfo, setSystemInfo] = useState<SystemInfo>({
-    platform: '',
-    userAgent: '',
-    language: '',
-    vendor: '',
-  });
+  const [systemInfo, setSystemInfo] = useState<SystemInfo | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const getSystemInfo = () => {
-      setSystemInfo({
-        platform: navigator.platform,
-        userAgent: navigator.userAgent,
-        language: navigator.language,
-        vendor: navigator.vendor,
-      });
+    const fetchSystemInfo = async () => {
+      try {
+        const response = await fetch('/api/system-info');
+        if (!response.ok) {
+          throw new Error('Failed to fetch system info');
+        }
+        const data = await response.json();
+        setSystemInfo(data);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to fetch system info');
+      }
     };
 
-    getSystemInfo();
+    fetchSystemInfo();
   }, []);
 
   const getSystemName = () => {
-    const { platform, userAgent } = systemInfo;
+    if (!systemInfo) return 'Loading...';
+    if (error) return 'Error loading system info';
     
-    if (userAgent.includes('Windows')) {
-      return 'Windows';
-    } else if (userAgent.includes('Mac')) {
-      return 'macOS';
-    } else if (userAgent.includes('Linux')) {
-      return 'Linux';
-    } else if (userAgent.includes('Android')) {
-      return 'Android';
-    } else if (userAgent.includes('iOS')) {
-      return 'iOS';
-    }
-    
-    return platform || 'Unknown System';
+    return `${systemInfo.type} ${systemInfo.release} (${systemInfo.arch})`;
   };
 
   return {
-    ...systemInfo,
+    systemInfo,
+    error,
     systemName: getSystemName(),
   };
 }; 
