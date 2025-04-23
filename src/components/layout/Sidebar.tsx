@@ -15,7 +15,9 @@ import {
   Power,
   Wifi,
   Gauge,
-  ChevronRight
+  ChevronRight,
+  Blocks,
+  Lock
 } from 'lucide-react';
 
 interface MenuItem {
@@ -85,6 +87,18 @@ const menuItems: MenuItem[] = [
     label: 'Power',
     href: '/power',
     description: 'Power management and control',
+  },
+  {
+    icon: <Lock className="w-6 h-6" />,
+    label: 'Security',
+    href: '/security',
+    description: 'System security settings',
+  },
+  {
+    icon: <Blocks className="w-6 h-6" />,
+    label: 'Blockchain',
+    href: '/blockchain',
+    description: 'Blockchain-related operations',
   },
 ];
 
