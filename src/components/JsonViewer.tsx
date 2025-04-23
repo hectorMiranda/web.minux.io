@@ -81,20 +81,20 @@ export function JsonViewer({ content }: JsonViewerProps) {
             <>
               {entries.map(([key, val]) => (
                 <div key={key}>
-                  {indent}  &quot;{key}&quot;: {renderJsonValue(val, `${path}.${key}`, level + 1)}
+                  {indent}  "{key}": {renderJsonValue(val, `${path}.${key}`, level + 1)}
                 </div>
               ))}
-              <div>{indent}&rbrace;</div>
+              <div>{indent}{'}'}</div>
             </>
           )}
-          {!isExpanded && <span>...&rbrace;</span>}
+          {!isExpanded && <span>{'...'}</span>}
         </div>
       );
     }
 
     return (
       <span className={typeof value === 'string' ? 'text-green-400' : 'text-blue-400'}>
-        {JSON.stringify(value)}
+        {typeof value === 'string' ? `"${value}"` : String(value)}
       </span>
     );
   };
