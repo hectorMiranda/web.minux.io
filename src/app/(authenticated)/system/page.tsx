@@ -46,8 +46,6 @@ export default function SystemPage() {
 
   // Fetch system metrics
   useEffect(() => {
-    let metricsInterval: NodeJS.Timeout;
-
     const fetchMetrics = async () => {
       try {
         const [latency, response] = await Promise.all([
@@ -79,7 +77,7 @@ export default function SystemPage() {
     fetchMetrics();
     
     // Set up interval for subsequent fetches
-    metricsInterval = setInterval(fetchMetrics, 2000);
+    const metricsInterval: NodeJS.Timeout = setInterval(fetchMetrics, 2000);
 
     // Cleanup
     return () => {
