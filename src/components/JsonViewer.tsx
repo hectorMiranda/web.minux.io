@@ -7,6 +7,14 @@ interface JsonViewerProps {
   content: string;
 }
 
+type JsonValue = 
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: JsonValue }
+  | JsonValue[];
+
 export function JsonViewer({ content }: JsonViewerProps) {
   const [isJsonView, setIsJsonView] = useState(false);
   const [expandedPaths, setExpandedPaths] = useState<Set<string>>(new Set(['root']));
@@ -32,7 +40,7 @@ export function JsonViewer({ content }: JsonViewerProps) {
     });
   };
 
-  const renderJsonValue = (value: any, path: string = 'root', level: number = 0): React.ReactNode => {
+  const renderJsonValue = (value: JsonValue, path: string = 'root', level: number = 0): React.ReactNode => {
     const indent = '  '.repeat(level);
     const isExpanded = expandedPaths.has(path);
 
@@ -73,7 +81,7 @@ export function JsonViewer({ content }: JsonViewerProps) {
             <>
               {entries.map(([key, val]) => (
                 <div key={key}>
-                  {indent}  "{key}": {renderJsonValue(val, `${path}.${key}`, level + 1)}
+                  {indent}  &quot;{key}&quot;: {renderJsonValue(val, `${path}.${key}`, level + 1)}
                 </div>
               ))}
               <div>{indent}&rbrace;</div>
