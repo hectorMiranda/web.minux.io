@@ -8,7 +8,7 @@ export const TopNav = () => {
   const { systemName } = useSystemInfo();
 
   return (
-    <div className="h-16 border-b border-white/10 px-4 flex items-center justify-between">
+    <div className="h-10 border-b border-white/10 px-4 flex items-center justify-between bg-[#2D2D2D]">
       <div className="flex items-center gap-4">
         <div className="text-sm text-white/50">
           {systemName}

@@ -14,7 +14,7 @@ export default function ConsolePage() {
   useEffect(() => {
     // Initial welcome message
     setHistory([
-      'Welcome to Minux Console',
+      'Welcome to the Minux Console',
       'Type "help" for available commands',
       ''
     ]);
@@ -94,10 +94,10 @@ export default function ConsolePage() {
   };
 
   return (
-    <div className="p-6">
+    <div className="h-full">
       <motion.div 
         ref={terminalRef}
-        className={`rounded-xl bg-[#0A192F] border border-white/10 overflow-hidden ${
+        className={`h-full rounded-lg bg-[#0A192F] border border-white/10 overflow-hidden ${
           isFullscreen ? 'fixed inset-0 rounded-none' : ''
         }`}
         initial={{ opacity: 0, y: 20 }}
@@ -132,8 +132,8 @@ export default function ConsolePage() {
         {/* Terminal Content */}
         <div 
           className={`font-mono text-sm p-4 space-y-1 ${
-            isFullscreen ? 'h-[calc(100vh-48px)]' : 'h-[600px]'
-          } overflow-auto`}
+            isFullscreen ? 'h-[calc(100vh-48px)]' : 'h-[calc(100vh-6rem)]'
+          } overflow-auto scrollbar-hide`}
           onClick={() => inputRef.current?.focus()}
         >
           {history.map((line, index) => (
