@@ -110,70 +110,77 @@ export const Sidebar = () => {
   const [isExpanded, setIsExpanded] = useState(false);
 
   return (
-    <nav 
-      className={`relative flex flex-col h-screen transition-all duration-300 ease-in-out ${
-        isExpanded ? 'w-64' : 'w-16'
-      } border-r border-white/10 bg-[#2D2D2D]`}
-    >
-      <div className="relative px-3 pt-4 pb-4">
-        <div className={`flex items-center ${isExpanded ? 'justify-start pl-1' : 'justify-center'}`}>
-          <MinuxLogo size={isExpanded ? "md" : "sm"} showText={isExpanded} />
+    <>
+      <nav 
+        className={`relative flex flex-col h-screen transition-all duration-300 ease-in-out ${
+          isExpanded ? 'w-64' : 'w-16'
+        } border-r border-white/10 bg-[#2D2D2D]`}
+      >
+        <div className="px-3 pt-4 pb-4">
+          <div className={`flex items-center ${isExpanded ? 'justify-start pl-1' : 'justify-center'}`}>
+            <MinuxLogo size={isExpanded ? "md" : "sm"} showText={isExpanded} />
+          </div>
         </div>
-        <button
-          onClick={() => setIsExpanded(!isExpanded)}
-          className="absolute -right-3 top-1/2 -translate-y-1/2 bg-[#2D2D2D] border border-white/10 p-1.5 rounded-full hover:bg-white/5 transition-colors"
-        >
-          {isExpanded ? (
-            <ChevronLeft className="w-4 h-4" />
-          ) : (
-            <ChevronRight className="w-4 h-4" />
-          )}
-        </button>
-      </div>
 
-      <div className="flex-1 overflow-y-auto scrollbar-hide">
-        <div className="space-y-1 px-2">
-          {menuItems.map((item) => {
-            const isActive = pathname === item.href;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="relative block group"
-                onMouseEnter={() => setHoveredItem(item.href)}
-                onMouseLeave={() => setHoveredItem(null)}
-              >
-                <div
-                  className={`flex items-center gap-3 px-3 py-2 rounded-md transition-colors ${
-                    isActive ? 'bg-white/10' : 'hover:bg-white/5'
-                  }`}
+        <div className="flex-1 overflow-y-auto scrollbar-hide">
+          <div className="space-y-1 px-2">
+            {menuItems.map((item) => {
+              const isActive = pathname === item.href;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="relative block group"
+                  onMouseEnter={() => setHoveredItem(item.href)}
+                  onMouseLeave={() => setHoveredItem(null)}
                 >
-                  <div className={`${isActive ? 'text-primary' : 'text-white/50'} transition-colors flex-shrink-0`}>
-                    {item.icon}
-                  </div>
-                  {isExpanded && (
-                    <span className={`text-sm ${isActive ? 'font-medium' : ''}`}>
-                      {item.label}
-                    </span>
-                  )}
-                </div>
-                {!isExpanded && hoveredItem === item.href && (
-                  <motion.div
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    className="absolute left-full ml-2 top-0 z-50 w-48 p-2 rounded-lg bg-[#2D2D2D] border border-white/10 shadow-lg"
+                  <div
+                    className={`flex items-center gap-3 px-3 py-2 rounded-md transition-colors ${
+                      isActive ? 'bg-white/10' : 'hover:bg-white/5'
+                    }`}
                   >
-                    <div className="text-sm font-medium">{item.label}</div>
-                    {item.description && (
-                      <div className="text-xs text-white/50 mt-1">{item.description}</div>
+                    <div className={`${isActive ? 'text-primary' : 'text-white/50'} transition-colors flex-shrink-0`}>
+                      {item.icon}
+                    </div>
+                    {isExpanded && (
+                      <span className={`text-sm ${isActive ? 'font-medium' : ''}`}>
+                        {item.label}
+                      </span>
                     )}
-                  </motion.div>
-                )}
-              </Link>
-            );
-          })}
+                  </div>
+                  {!isExpanded && hoveredItem === item.href && (
+                    <motion.div
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      className="absolute left-full ml-2 top-0 z-50 w-48 p-2 rounded-lg bg-[#2D2D2D] border border-white/10 shadow-lg"
+                    >
+                      <div className="text-sm font-medium">{item.label}</div>
+                      {item.description && (
+                        <div className="text-xs text-white/50 mt-1">{item.description}</div>
+                      )}
+                    </motion.div>
+                  )}
+                </Link>
+              );
+            })}
+          </div>
         </div>
-      </div>
-    </nav>
+      </nav>
+
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className={`fixed left-0 top-1/2 -translate-y-1/2 ${
+          isExpanded ? 'translate-x-64' : 'translate-x-16'
+        } z-50 bg-[#2D2D2D] hover:bg-[#3D3D3D] border border-white/10 transition-all duration-300 ease-in-out`}
+      >
+        <div className="flex items-center justify-center p-1 hover:text-primary text-white/70">
+          {isExpanded ? (
+            <ChevronLeft className="w-5 h-5" />
+          ) : (
+            <ChevronRight className="w-5 h-5" />
+          )}
+        </div>
+      </button>
+    </>
   );
 }; 

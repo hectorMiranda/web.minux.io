@@ -1,12 +1,23 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/auth';
+import { LoadingCubes } from '@/components/LoadingCubes';
+import { PasswordDialog } from '@/components/auth/PasswordDialog';
+import { AuthCube } from '@/components/auth/AuthCube';
 
 export default function HomePage() {
+  const [isLoading, setIsLoading] = useState(true);
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const router = useRouter();
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, setAuthenticated } = useAuthStore();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -14,5 +25,56 @@ export default function HomePage() {
     }
   }, [isAuthenticated, router]);
 
-  return null;
+  const handleLoadingFinish = () => {
+    setIsLoading(false);
+  };
+
+  const handleCubeClick = () => {
+    setShowPasswordDialog(true);
+  };
+
+  const handleCloseDialog = () => {
+    setShowPasswordDialog(false);
+  };
+
+  const handleAuthentication = (password: string) => {
+    if (password === process.env.NEXT_PUBLIC_SYSTEM_PASSWORD) {
+      setAuthenticated(true);
+      setShowPasswordDialog(false);
+    }
+  };
+
+  if (!mounted) return null;
+
+  return (
+    <div className="min-h-screen bg-[#0B1120] flex items-center justify-center">
+      <AnimatePresence mode="wait">
+        {isLoading ? (
+          <LoadingCubes key="loading" onFinish={handleLoadingFinish} />
+        ) : (
+          <motion.div 
+            key="auth-cube"
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ 
+              type: "spring",
+              duration: 0.8,
+              delay: 0.2
+            }}
+          >
+            <AuthCube 
+              onCubeClick={handleCubeClick} 
+              isDialogOpen={showPasswordDialog}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+      {showPasswordDialog && (
+        <PasswordDialog 
+          onAuthenticate={handleAuthentication}
+          onClose={handleCloseDialog}
+        />
+      )}
+    </div>
+  );
 }
