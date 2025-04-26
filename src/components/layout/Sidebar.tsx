@@ -21,6 +21,7 @@ import {
   Lock
 } from 'lucide-react';
 import { MinuxLogo } from '../MinuxLogo';
+import { useSettingsStore } from '@/lib/settings';
 
 interface MenuItem {
   icon: React.ReactElement;
@@ -109,27 +110,23 @@ export const Sidebar = () => {
   const router = useRouter();
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
-  const [menuItems, setMenuItems] = useState<MenuItem[]>(defaultMenuItems);
+  const { menuItems: savedMenuItems, homePage, setMenuItems } = useSettingsStore();
+  const [menuItems, setLocalMenuItems] = useState<MenuItem[]>(defaultMenuItems);
 
   useEffect(() => {
-    // Load menu items from localStorage
-    const savedMenuItems = localStorage.getItem('menuItems');
-    if (savedMenuItems) {
-      const parsedItems = JSON.parse(savedMenuItems);
-      // Convert icon strings back to React elements
-      const itemsWithIcons = parsedItems.map((item: any) => ({
+    if (savedMenuItems.length > 0) {
+      const itemsWithIcons = savedMenuItems.map((item: any) => ({
         ...item,
         icon: getIconComponent(item.icon)
       }));
-      setMenuItems(itemsWithIcons);
+      setLocalMenuItems(itemsWithIcons);
     }
 
     // Redirect to home page if on root
     if (pathname === '/') {
-      const homePage = localStorage.getItem('homePage') || '/dashboard';
       router.push(homePage);
     }
-  }, [pathname, router]);
+  }, [pathname, router, homePage, savedMenuItems]);
 
   const getIconComponent = (iconName: string): React.ReactElement => {
     const iconMap: { [key: string]: React.ReactElement } = {
@@ -149,6 +146,11 @@ export const Sidebar = () => {
     return iconMap[iconName] || <Home className="w-5 h-5" />;
   };
 
+  const handleHomeClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    router.push(homePage);
+  };
+
   return (
     <>
       <nav 
@@ -166,13 +168,16 @@ export const Sidebar = () => {
           <div className="space-y-1 px-2">
             {menuItems.map((item) => {
               const isActive = pathname === item.href;
+              const isHome = item.icon.type === Home;
+              
               return (
                 <Link
                   key={item.href}
-                  href={item.href}
+                  href={isHome ? homePage : item.href}
                   className="relative block group"
                   onMouseEnter={() => setHoveredItem(item.href)}
                   onMouseLeave={() => setHoveredItem(null)}
+                  onClick={isHome ? handleHomeClick : undefined}
                 >
                   <div
                     className={`flex items-center gap-3 px-3 py-2 rounded-md transition-colors ${

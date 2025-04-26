@@ -2,12 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { DragDropContext, Droppable, Draggable, DropResult, DroppableProvided, DraggableProvided } from '@hello-pangea/dnd';
+import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { Save, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
+import { useSettingsStore } from '@/lib/settings';
 
 interface MenuItem {
   icon: string;
@@ -93,38 +94,29 @@ const defaultMenuItems: MenuItem[] = [
 
 export default function SettingsPage() {
   const router = useRouter();
-  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
-  const [homePage, setHomePage] = useState<string>('/dashboard');
+  const { menuItems, homePage, setMenuItems, setHomePage } = useSettingsStore();
+  const [localMenuItems, setLocalMenuItems] = useState<MenuItem[]>(menuItems);
+  const [localHomePage, setLocalHomePage] = useState<string>(homePage);
 
   useEffect(() => {
-    // Load settings from localStorage
-    const savedMenuItems = localStorage.getItem('menuItems');
-    const savedHomePage = localStorage.getItem('homePage');
-    
-    if (savedMenuItems) {
-      setMenuItems(JSON.parse(savedMenuItems));
-    } else {
-      setMenuItems(defaultMenuItems);
+    if (menuItems.length === 0) {
+      setLocalMenuItems(defaultMenuItems);
     }
-    
-    if (savedHomePage) {
-      setHomePage(savedHomePage);
-    }
-  }, []);
+  }, [menuItems]);
 
   const handleDragEnd = (result: DropResult) => {
     if (!result.destination) return;
 
-    const items = Array.from(menuItems);
+    const items = Array.from(localMenuItems);
     const [reorderedItem] = items.splice(result.source.index, 1);
     items.splice(result.destination.index, 0, reorderedItem);
 
-    setMenuItems(items);
+    setLocalMenuItems(items);
   };
 
   const handleSave = () => {
-    localStorage.setItem('menuItems', JSON.stringify(menuItems));
-    localStorage.setItem('homePage', homePage);
+    setMenuItems(localMenuItems);
+    setHomePage(localHomePage);
     toast.success('Settings saved successfully');
   };
 
@@ -148,12 +140,12 @@ export default function SettingsPage() {
             <CardTitle>Home Page</CardTitle>
           </CardHeader>
           <CardContent>
-            <Select value={homePage} onValueChange={setHomePage}>
+            <Select value={localHomePage} onValueChange={setLocalHomePage}>
               <SelectTrigger className="w-[280px]">
                 <SelectValue placeholder="Select home page" />
               </SelectTrigger>
               <SelectContent>
-                {menuItems.map((item) => (
+                {localMenuItems.map((item) => (
                   <SelectItem key={item.href} value={item.href}>
                     {item.label}
                   </SelectItem>
@@ -165,35 +157,38 @@ export default function SettingsPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Menu Items Order</CardTitle>
+            <CardTitle>Menu Items</CardTitle>
           </CardHeader>
           <CardContent>
             <DragDropContext onDragEnd={handleDragEnd}>
               <Droppable droppableId="menu-items">
-                {(provided: DroppableProvided) => (
+                {(provided) => (
                   <div
                     {...provided.droppableProps}
                     ref={provided.innerRef}
                     className="space-y-2"
                   >
-                    {menuItems.map((item, index) => (
+                    {localMenuItems.map((item, index) => (
                       <Draggable
                         key={item.href}
                         draggableId={item.href}
                         index={index}
                       >
-                        {(provided: DraggableProvided) => (
+                        {(provided) => (
                           <div
                             ref={provided.innerRef}
                             {...provided.draggableProps}
                             {...provided.dragHandleProps}
-                            className="flex items-center gap-4 p-4 bg-white/5 rounded-lg cursor-move hover:bg-white/10"
+                            className="flex items-center gap-4 p-4 bg-white/5 rounded-lg"
                           >
-                            <span className="text-white/50">{index + 1}.</span>
-                            <span>{item.label}</span>
-                            <span className="text-sm text-white/50">
-                              {item.href}
-                            </span>
+                            <div className="flex-1">
+                              <div className="font-medium">{item.label}</div>
+                              {item.description && (
+                                <div className="text-sm text-white/50">
+                                  {item.description}
+                                </div>
+                              )}
+                            </div>
                           </div>
                         )}
                       </Draggable>
@@ -209,7 +204,7 @@ export default function SettingsPage() {
         <div className="flex justify-end">
           <Button onClick={handleSave} className="gap-2">
             <Save className="h-4 w-4" />
-            Save Settings
+            Save Changes
           </Button>
         </div>
       </div>
