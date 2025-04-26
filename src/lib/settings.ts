@@ -6,6 +6,7 @@ interface MenuItem {
   label: string;
   href: string;
   description?: string;
+  visible: boolean;
 }
 
 interface SettingsState {

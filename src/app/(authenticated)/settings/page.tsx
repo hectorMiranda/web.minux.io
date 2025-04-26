@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
-import { Save, ArrowLeft } from 'lucide-react';
+import { Save, ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -15,6 +15,7 @@ interface MenuItem {
   label: string;
   href: string;
   description?: string;
+  visible: boolean;
 }
 
 const defaultMenuItems: MenuItem[] = [
@@ -23,72 +24,84 @@ const defaultMenuItems: MenuItem[] = [
     label: 'Console',
     href: '/console',
     description: 'System terminal access',
+    visible: true,
   },
   {
     icon: 'Home',
     label: 'Dashboard',
     href: '/dashboard',
     description: 'System overview and status',
+    visible: true,
   },
   {
     icon: 'Cpu',
     label: 'System',
     href: '/system',
     description: 'CPU, memory, and processes',
+    visible: true,
   },
   {
     icon: 'Thermometer',
     label: 'Sensors',
     href: '/sensors',
     description: 'Temperature and voltage monitoring',
+    visible: true,
   },
   {
     icon: 'Network',
     label: 'Network',
     href: '/network',
     description: 'Network interfaces and statistics',
+    visible: true,
   },
   {
     icon: 'Wifi',
     label: 'Wi-Fi',
     href: '/wifi',
     description: 'Wireless network configuration',
+    visible: true,
   },
   {
     icon: 'HardDrive',
     label: 'Storage',
     href: '/storage',
     description: 'Disk usage and management',
+    visible: true,
   },
   {
     icon: 'Gauge',
     label: 'Performance',
     href: '/performance',
     description: 'System performance metrics',
+    visible: true,
   },
   {
     icon: 'Settings',
     label: 'Settings',
     href: '/settings',
     description: 'System configuration',
+    visible: true,
   },
   {
     icon: 'Power',
     label: 'Power',
     href: '/power',
     description: 'Power management and control',
+    visible: true,
   },
   {
     icon: 'Lock',
     label: 'Security',
     href: '/security',
     description: 'System security settings',
+    visible: true,
   },
   {
     icon: 'Blocks',
     label: 'Blockchain',
     href: '/blockchain',
     description: 'Blockchain-related operations',
+    visible: true,
   },
 ];
 
@@ -111,6 +124,15 @@ export default function SettingsPage() {
     const [reorderedItem] = items.splice(result.source.index, 1);
     items.splice(result.destination.index, 0, reorderedItem);
 
+    setLocalMenuItems(items);
+  };
+
+  const toggleVisibility = (index: number) => {
+    const items = [...localMenuItems];
+    items[index] = {
+      ...items[index],
+      visible: !items[index].visible
+    };
     setLocalMenuItems(items);
   };
 
@@ -145,7 +167,7 @@ export default function SettingsPage() {
                 <SelectValue placeholder="Select home page" />
               </SelectTrigger>
               <SelectContent>
-                {localMenuItems.map((item) => (
+                {localMenuItems.filter(item => item.visible).map((item) => (
                   <SelectItem key={item.href} value={item.href}>
                     {item.label}
                   </SelectItem>
@@ -179,7 +201,9 @@ export default function SettingsPage() {
                             ref={provided.innerRef}
                             {...provided.draggableProps}
                             {...provided.dragHandleProps}
-                            className="flex items-center gap-4 p-4 bg-white/5 rounded-lg"
+                            className={`flex items-center gap-4 p-4 rounded-lg ${
+                              item.visible ? 'bg-white/5' : 'bg-white/5 opacity-50'
+                            }`}
                           >
                             <div className="flex-1">
                               <div className="font-medium">{item.label}</div>
@@ -189,6 +213,18 @@ export default function SettingsPage() {
                                 </div>
                               )}
                             </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => toggleVisibility(index)}
+                              className="hover:bg-white/10"
+                            >
+                              {item.visible ? (
+                                <Eye className="h-4 w-4" />
+                              ) : (
+                                <EyeOff className="h-4 w-4" />
+                              )}
+                            </Button>
                           </div>
                         )}
                       </Draggable>

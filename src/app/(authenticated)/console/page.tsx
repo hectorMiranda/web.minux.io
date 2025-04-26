@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Terminal as TerminalIcon, X, Maximize2, Minimize2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 export default function ConsolePage() {
   const [command, setCommand] = useState('');
@@ -10,6 +11,7 @@ export default function ConsolePage() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const terminalRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
 
   useEffect(() => {
     // Initial welcome message
@@ -38,6 +40,7 @@ export default function ConsolePage() {
           '  date     - Show current date and time',
           '  ls       - List directory contents',
           '  pwd      - Print working directory',
+          '  settings - Navigate to settings page',
           ''
         ];
         break;
@@ -71,6 +74,16 @@ export default function ConsolePage() {
       case 'pwd':
         response = ['/home/pi', ''];
         break;
+      case 'settings':
+        response = ['Navigating to settings page...', ''];
+        setHistory(prev => [
+          ...prev,
+          `pi@minux:~$ ${command}`,
+          ...response
+        ]);
+        setCommand('');
+        router.push('/settings');
+        return;
       default:
         response = [`Command not found: ${command}`, ''];
     }

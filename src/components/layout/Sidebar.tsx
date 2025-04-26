@@ -28,6 +28,7 @@ interface MenuItem {
   label: string;
   href: string;
   description?: string;
+  visible: boolean;
 }
 
 const defaultMenuItems: MenuItem[] = [
@@ -36,72 +37,84 @@ const defaultMenuItems: MenuItem[] = [
     label: 'Console',
     href: '/console',
     description: 'System terminal access',
+    visible: true,
   },
   {
     icon: <Home className="w-5 h-5" />,
     label: 'Dashboard',
     href: '/dashboard',
     description: 'System overview and status',
+    visible: true,
   },
   {
     icon: <Cpu className="w-5 h-5" />,
     label: 'System',
     href: '/system',
     description: 'CPU, memory, and processes',
+    visible: true,
   },
   {
     icon: <Thermometer className="w-5 h-5" />,
     label: 'Sensors',
     href: '/sensors',
     description: 'Temperature and voltage monitoring',
+    visible: true,
   },
   {
     icon: <Network className="w-5 h-5" />,
     label: 'Network',
     href: '/network',
     description: 'Network interfaces and statistics',
+    visible: true,
   },
   {
     icon: <Wifi className="w-5 h-5" />,
     label: 'Wi-Fi',
     href: '/wifi',
     description: 'Wireless network configuration',
+    visible: true,
   },
   {
     icon: <HardDrive className="w-5 h-5" />,
     label: 'Storage',
     href: '/storage',
     description: 'Disk usage and management',
+    visible: true,
   },
   {
     icon: <Gauge className="w-5 h-5" />,
     label: 'Performance',
     href: '/performance',
     description: 'System performance metrics',
+    visible: true,
   },
   {
     icon: <Settings className="w-5 h-5" />,
     label: 'Settings',
     href: '/settings',
     description: 'System configuration',
+    visible: true,
   },
   {
     icon: <Power className="w-5 h-5" />,
     label: 'Power',
     href: '/power',
     description: 'Power management and control',
+    visible: true,
   },
   {
     icon: <Lock className="w-5 h-5" />,
     label: 'Security',
     href: '/security',
     description: 'System security settings',
+    visible: true,
   },
   {
     icon: <Blocks className="w-5 h-5" />,
     label: 'Blockchain',
     href: '/blockchain',
     description: 'Blockchain-related operations',
+    visible: true,
   },
 ];
 
@@ -166,7 +179,7 @@ export const Sidebar = () => {
 
         <div className="flex-1 overflow-y-auto scrollbar-hide">
           <div className="space-y-1 px-2">
-            {menuItems.map((item) => {
+            {menuItems.filter(item => item.visible).map((item) => {
               const isActive = pathname === item.href;
               const isHome = item.icon.type === Home;
               
