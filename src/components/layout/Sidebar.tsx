@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
   Home,
@@ -29,7 +29,7 @@ interface MenuItem {
   description?: string;
 }
 
-const menuItems: MenuItem[] = [
+const defaultMenuItems: MenuItem[] = [
   {
     icon: <Terminal className="w-5 h-5" />,
     label: 'Console',
@@ -106,8 +106,48 @@ const menuItems: MenuItem[] = [
 
 export const Sidebar = () => {
   const pathname = usePathname();
+  const router = useRouter();
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [menuItems, setMenuItems] = useState<MenuItem[]>(defaultMenuItems);
+
+  useEffect(() => {
+    // Load menu items from localStorage
+    const savedMenuItems = localStorage.getItem('menuItems');
+    if (savedMenuItems) {
+      const parsedItems = JSON.parse(savedMenuItems);
+      // Convert icon strings back to React elements
+      const itemsWithIcons = parsedItems.map((item: any) => ({
+        ...item,
+        icon: getIconComponent(item.icon)
+      }));
+      setMenuItems(itemsWithIcons);
+    }
+
+    // Redirect to home page if on root
+    if (pathname === '/') {
+      const homePage = localStorage.getItem('homePage') || '/dashboard';
+      router.push(homePage);
+    }
+  }, [pathname, router]);
+
+  const getIconComponent = (iconName: string): React.ReactElement => {
+    const iconMap: { [key: string]: React.ReactElement } = {
+      Terminal: <Terminal className="w-5 h-5" />,
+      Home: <Home className="w-5 h-5" />,
+      Cpu: <Cpu className="w-5 h-5" />,
+      Thermometer: <Thermometer className="w-5 h-5" />,
+      Network: <Network className="w-5 h-5" />,
+      Wifi: <Wifi className="w-5 h-5" />,
+      HardDrive: <HardDrive className="w-5 h-5" />,
+      Gauge: <Gauge className="w-5 h-5" />,
+      Settings: <Settings className="w-5 h-5" />,
+      Power: <Power className="w-5 h-5" />,
+      Lock: <Lock className="w-5 h-5" />,
+      Blocks: <Blocks className="w-5 h-5" />,
+    };
+    return iconMap[iconName] || <Home className="w-5 h-5" />;
+  };
 
   return (
     <>

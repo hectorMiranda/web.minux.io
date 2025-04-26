@@ -1,192 +1,218 @@
 'use client';
 
-import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Settings, Shield, Bell, Moon, Globe, Lock, User, Power } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { DragDropContext, Droppable, Draggable, DropResult, DroppableProvided, DraggableProvided } from '@hello-pangea/dnd';
+import { Save, ArrowLeft } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { toast } from 'sonner';
+
+interface MenuItem {
+  icon: string;
+  label: string;
+  href: string;
+  description?: string;
+}
+
+const defaultMenuItems: MenuItem[] = [
+  {
+    icon: 'Terminal',
+    label: 'Console',
+    href: '/console',
+    description: 'System terminal access',
+  },
+  {
+    icon: 'Home',
+    label: 'Dashboard',
+    href: '/dashboard',
+    description: 'System overview and status',
+  },
+  {
+    icon: 'Cpu',
+    label: 'System',
+    href: '/system',
+    description: 'CPU, memory, and processes',
+  },
+  {
+    icon: 'Thermometer',
+    label: 'Sensors',
+    href: '/sensors',
+    description: 'Temperature and voltage monitoring',
+  },
+  {
+    icon: 'Network',
+    label: 'Network',
+    href: '/network',
+    description: 'Network interfaces and statistics',
+  },
+  {
+    icon: 'Wifi',
+    label: 'Wi-Fi',
+    href: '/wifi',
+    description: 'Wireless network configuration',
+  },
+  {
+    icon: 'HardDrive',
+    label: 'Storage',
+    href: '/storage',
+    description: 'Disk usage and management',
+  },
+  {
+    icon: 'Gauge',
+    label: 'Performance',
+    href: '/performance',
+    description: 'System performance metrics',
+  },
+  {
+    icon: 'Settings',
+    label: 'Settings',
+    href: '/settings',
+    description: 'System configuration',
+  },
+  {
+    icon: 'Power',
+    label: 'Power',
+    href: '/power',
+    description: 'Power management and control',
+  },
+  {
+    icon: 'Lock',
+    label: 'Security',
+    href: '/security',
+    description: 'System security settings',
+  },
+  {
+    icon: 'Blocks',
+    label: 'Blockchain',
+    href: '/blockchain',
+    description: 'Blockchain-related operations',
+  },
+];
 
 export default function SettingsPage() {
-  const [notifications, setNotifications] = useState(true);
-  const [darkMode, setDarkMode] = useState(true);
-  const [autoUpdate, setAutoUpdate] = useState(true);
+  const router = useRouter();
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [homePage, setHomePage] = useState<string>('/dashboard');
+
+  useEffect(() => {
+    // Load settings from localStorage
+    const savedMenuItems = localStorage.getItem('menuItems');
+    const savedHomePage = localStorage.getItem('homePage');
+    
+    if (savedMenuItems) {
+      setMenuItems(JSON.parse(savedMenuItems));
+    } else {
+      setMenuItems(defaultMenuItems);
+    }
+    
+    if (savedHomePage) {
+      setHomePage(savedHomePage);
+    }
+  }, []);
+
+  const handleDragEnd = (result: DropResult) => {
+    if (!result.destination) return;
+
+    const items = Array.from(menuItems);
+    const [reorderedItem] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, reorderedItem);
+
+    setMenuItems(items);
+  };
+
+  const handleSave = () => {
+    localStorage.setItem('menuItems', JSON.stringify(menuItems));
+    localStorage.setItem('homePage', homePage);
+    toast.success('Settings saved successfully');
+  };
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Settings</h1>
-          <p className="text-white/50">System configuration and preferences</p>
-        </div>
+    <div className="container mx-auto p-6">
+      <div className="flex items-center gap-4 mb-6">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => router.back()}
+          className="hover:bg-white/10"
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        <h1 className="text-2xl font-bold">Settings</h1>
       </div>
 
-      {/* System Settings */}
-      <motion.div 
-        className="grid grid-cols-1 lg:grid-cols-2 gap-6"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
-        {/* General Settings */}
-        <div className="p-6 rounded-xl bg-white/5 border border-white/10">
-          <div className="flex items-center gap-3 mb-6">
-            <Settings className="w-5 h-5 text-primary" />
-            <h2 className="text-lg font-semibold">General Settings</h2>
-          </div>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Bell className="w-4 h-4 text-white/50" />
-                <div>
-                  <div>System Notifications</div>
-                  <div className="text-sm text-white/50">Get notified about system events</div>
-                </div>
-              </div>
-              <button
-                onClick={() => setNotifications(!notifications)}
-                className={`w-12 h-6 rounded-full transition-colors ${
-                  notifications ? 'bg-primary' : 'bg-white/10'
-                }`}
-              >
-                <div className={`w-4 h-4 bg-white rounded-full transition-transform ${
-                  notifications ? 'translate-x-7' : 'translate-x-1'
-                }`} />
-              </button>
-            </div>
+      <div className="grid gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Home Page</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Select value={homePage} onValueChange={setHomePage}>
+              <SelectTrigger className="w-[280px]">
+                <SelectValue placeholder="Select home page" />
+              </SelectTrigger>
+              <SelectContent>
+                {menuItems.map((item) => (
+                  <SelectItem key={item.href} value={item.href}>
+                    {item.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </CardContent>
+        </Card>
 
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Moon className="w-4 h-4 text-white/50" />
-                <div>
-                  <div>Dark Mode</div>
-                  <div className="text-sm text-white/50">Toggle dark/light theme</div>
-                </div>
-              </div>
-              <button
-                onClick={() => setDarkMode(!darkMode)}
-                className={`w-12 h-6 rounded-full transition-colors ${
-                  darkMode ? 'bg-primary' : 'bg-white/10'
-                }`}
-              >
-                <div className={`w-4 h-4 bg-white rounded-full transition-transform ${
-                  darkMode ? 'translate-x-7' : 'translate-x-1'
-                }`} />
-              </button>
-            </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Menu Items Order</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <DragDropContext onDragEnd={handleDragEnd}>
+              <Droppable droppableId="menu-items">
+                {(provided: DroppableProvided) => (
+                  <div
+                    {...provided.droppableProps}
+                    ref={provided.innerRef}
+                    className="space-y-2"
+                  >
+                    {menuItems.map((item, index) => (
+                      <Draggable
+                        key={item.href}
+                        draggableId={item.href}
+                        index={index}
+                      >
+                        {(provided: DraggableProvided) => (
+                          <div
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            {...provided.dragHandleProps}
+                            className="flex items-center gap-4 p-4 bg-white/5 rounded-lg cursor-move hover:bg-white/10"
+                          >
+                            <span className="text-white/50">{index + 1}.</span>
+                            <span>{item.label}</span>
+                            <span className="text-sm text-white/50">
+                              {item.href}
+                            </span>
+                          </div>
+                        )}
+                      </Draggable>
+                    ))}
+                    {provided.placeholder}
+                  </div>
+                )}
+              </Droppable>
+            </DragDropContext>
+          </CardContent>
+        </Card>
 
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Globe className="w-4 h-4 text-white/50" />
-                <div>
-                  <div>Auto Updates</div>
-                  <div className="text-sm text-white/50">Keep system up to date</div>
-                </div>
-              </div>
-              <button
-                onClick={() => setAutoUpdate(!autoUpdate)}
-                className={`w-12 h-6 rounded-full transition-colors ${
-                  autoUpdate ? 'bg-primary' : 'bg-white/10'
-                }`}
-              >
-                <div className={`w-4 h-4 bg-white rounded-full transition-transform ${
-                  autoUpdate ? 'translate-x-7' : 'translate-x-1'
-                }`} />
-              </button>
-            </div>
-          </div>
+        <div className="flex justify-end">
+          <Button onClick={handleSave} className="gap-2">
+            <Save className="h-4 w-4" />
+            Save Settings
+          </Button>
         </div>
-
-        {/* Security Settings */}
-        <div className="p-6 rounded-xl bg-white/5 border border-white/10">
-          <div className="flex items-center gap-3 mb-6">
-            <Shield className="w-5 h-5 text-primary" />
-            <h2 className="text-lg font-semibold">Security Settings</h2>
-          </div>
-          <div className="space-y-4">
-            <button className="w-full flex items-center justify-between p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
-              <div className="flex items-center gap-3">
-                <Lock className="w-4 h-4 text-white/50" />
-                <div className="text-left">
-                  <div>Change Password</div>
-                  <div className="text-sm text-white/50">Update system access password</div>
-                </div>
-              </div>
-              <div className="text-primary text-sm">Change</div>
-            </button>
-
-            <button className="w-full flex items-center justify-between p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
-              <div className="flex items-center gap-3">
-                <User className="w-4 h-4 text-white/50" />
-                <div className="text-left">
-                  <div>User Management</div>
-                  <div className="text-sm text-white/50">Manage system users</div>
-                </div>
-              </div>
-              <div className="text-primary text-sm">Manage</div>
-            </button>
-
-            <button className="w-full flex items-center justify-between p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
-              <div className="flex items-center gap-3">
-                <Shield className="w-4 h-4 text-white/50" />
-                <div className="text-left">
-                  <div>Security Log</div>
-                  <div className="text-sm text-white/50">View security events</div>
-                </div>
-              </div>
-              <div className="text-primary text-sm">View</div>
-            </button>
-          </div>
-        </div>
-      </motion.div>
-
-      {/* System Actions */}
-      <motion.div 
-        className="p-6 rounded-xl bg-white/5 border border-white/10"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-      >
-        <h2 className="text-lg font-semibold mb-4">System Actions</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <button className="flex items-center gap-3 p-4 rounded-lg bg-red-500/10 hover:bg-red-500/20 transition-colors text-red-400">
-            <Power className="w-5 h-5" />
-            <span>Shutdown</span>
-          </button>
-          <button className="flex items-center gap-3 p-4 rounded-lg bg-orange-500/10 hover:bg-orange-500/20 transition-colors text-orange-400">
-            <Power className="w-5 h-5" />
-            <span>Restart</span>
-          </button>
-          <button className="flex items-center gap-3 p-4 rounded-lg bg-primary/10 hover:bg-primary/20 transition-colors text-primary">
-            <Power className="w-5 h-5" />
-            <span>Sleep</span>
-          </button>
-        </div>
-      </motion.div>
-
-      {/* About System */}
-      <motion.div 
-        className="p-6 rounded-xl bg-white/5 border border-white/10"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-      >
-        <h2 className="text-lg font-semibold mb-4">About System</h2>
-        <div className="space-y-3">
-          <div className="flex justify-between py-2 border-b border-white/10">
-            <span className="text-white/50">Version</span>
-            <span>Minux 1.0.0</span>
-          </div>
-          <div className="flex justify-between py-2 border-b border-white/10">
-            <span className="text-white/50">Build</span>
-            <span>2024.03.20</span>
-          </div>
-          <div className="flex justify-between py-2 border-b border-white/10">
-            <span className="text-white/50">OS Version</span>
-            <span>Raspberry Pi OS 11</span>
-          </div>
-          <div className="flex justify-between py-2">
-            <span className="text-white/50">License</span>
-            <span>MIT</span>
-          </div>
-        </div>
-      </motion.div>
+      </div>
     </div>
   );
 } 
