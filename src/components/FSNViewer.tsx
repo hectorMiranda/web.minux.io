@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import gsap from 'gsap';
+import { Database, Trash2, Edit2, Save, X } from 'lucide-react';
 
 interface StorageItem {
   name: string;
@@ -325,60 +326,63 @@ export function FSNViewer({ items, onDelete, onUpdate }: FSNViewerProps) {
   return (
     <div className="relative w-full h-full">
       <div ref={containerRef} className="w-full h-full" />
+      
       {selectedItem && (
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[90%] max-w-4xl bg-[#0a192f] border border-primary rounded-lg overflow-hidden">
-          <div className="flex justify-between items-center mb-2">
-            <h3 className="text-primary font-mono text-lg">{selectedItem.name}</h3>
-            <div className="flex gap-2">
-              <button 
-                onClick={() => handleEdit(selectedItem)}
-                className="text-primary hover:text-primary/80 transition-colors px-3 py-1 rounded bg-primary/20"
-              >
-                Edit
-              </button>
-              <button 
+        <div className="absolute top-0 right-0 w-96 m-4 bg-[#0a192f] rounded-lg border border-primary/20 overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-2 bg-primary/10 border-b border-primary/20">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
+                <Database className="w-4 h-4 text-primary" />
+              </div>
+              <div>
+                <div className="text-primary font-mono">{selectedItem.name}</div>
+                <div className="text-xs text-gray-400">{selectedItem.size} bytes</div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              {!isEditing && (
+                <button
+                  onClick={() => handleEdit(selectedItem)}
+                  className="text-primary hover:text-primary/80 transition-colors p-2 hover:bg-primary/10 rounded-lg"
+                >
+                  <Edit2 className="w-4 h-4" />
+                </button>
+              )}
+              {isEditing && (
+                <button
+                  onClick={() => handleSave(selectedItem)}
+                  className="text-green-400 hover:text-green-300 transition-colors p-2 hover:bg-green-400/10 rounded-lg"
+                >
+                  <Save className="w-4 h-4" />
+                </button>
+              )}
+              <button
                 onClick={() => handleDelete(selectedItem)}
-                className="text-red-500 hover:text-red-400 transition-colors px-3 py-1 rounded bg-red-500/20"
+                className="text-red-400 hover:text-red-300 transition-colors p-2 hover:bg-red-400/10 rounded-lg"
               >
-                Delete
+                <Trash2 className="w-4 h-4" />
               </button>
-              <button 
+              <button
                 onClick={() => setSelectedItem(null)}
-                className="text-primary hover:text-primary/80 transition-colors"
+                className="text-gray-400 hover:text-gray-300 transition-colors p-2 hover:bg-gray-400/10 rounded-lg"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                </svg>
+                <X className="w-4 h-4" />
               </button>
             </div>
           </div>
-          {isEditing ? (
-            <div>
+          <div className="p-4">
+            {isEditing ? (
               <textarea
                 value={editContent}
                 onChange={(e) => setEditContent(e.target.value)}
-                className="w-full h-32 bg-black/50 text-primary font-mono text-sm p-2 rounded border border-primary/20 focus:outline-none focus:border-primary/40"
+                className="w-full h-64 bg-black/30 border border-primary/20 rounded p-3 text-white font-mono text-sm focus:outline-none focus:border-primary"
               />
-              <div className="flex justify-end gap-2 mt-2">
-                <button
-                  onClick={() => setIsEditing(false)}
-                  className="text-gray-400 hover:text-gray-300 transition-colors px-3 py-1 rounded bg-gray-500/20"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => handleSave(selectedItem)}
-                  className="text-primary hover:text-primary/80 transition-colors px-3 py-1 rounded bg-primary/20"
-                >
-                  Save
-                </button>
-              </div>
-            </div>
-          ) : (
-            <p className="text-gray-400 font-mono text-sm overflow-auto max-h-32">
-              {selectedItem.content}
-            </p>
-          )}
+            ) : (
+              <pre className="w-full h-64 bg-black/30 rounded p-3 font-mono text-sm overflow-auto whitespace-pre-wrap break-all">
+                {selectedItem.content}
+              </pre>
+            )}
+          </div>
         </div>
       )}
     </div>

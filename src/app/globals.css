@@ -39,6 +39,25 @@
   }
 }
 
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+.animate-marquee {
+  white-space: nowrap;
+  overflow: hidden;
+  animation: marquee 10s linear infinite;
+  animation-delay: 1s;
+  &:hover {
+    animation-play-state: running;
+  }
+}
+
 :root {
   --foreground-rgb: 255, 255, 255;
   --background-start-rgb: 0, 0, 0;

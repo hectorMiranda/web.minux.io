@@ -62,9 +62,10 @@ export function JsonViewer({ content }: JsonViewerProps) {
            contentStr.includes('useState') || 
            contentStr.includes('React') || 
            contentStr.includes('function'))) {
+        // For React content, we'll display it as a string representation
         return {
           isValid: false,
-          content: contentStr,
+          content: typeof contentStr === 'function' ? '[Function]' : contentStr,
           type: 'react'
         };
       }
@@ -115,7 +116,7 @@ export function JsonViewer({ content }: JsonViewerProps) {
         className="bg-black/30 rounded p-3 font-mono text-sm overflow-x-auto"
       >
         <pre className="whitespace-pre-wrap break-all">
-          {displayContent}
+          {typeof displayContent === 'function' ? '[Function]' : displayContent}
         </pre>
       </motion.div>
     </div>
