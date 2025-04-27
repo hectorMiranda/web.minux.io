@@ -27,22 +27,151 @@ export default function ConsolePage() {
     if (!command.trim()) return;
 
     let response: string[] = [];
-    const cmd = command.toLowerCase().trim();
+    const args = command.toLowerCase().trim().split(' ');
+    const cmd = args[0];
 
     switch (cmd) {
       case 'help':
         response = [
           'Available commands:',
-          '  help     - Show this help message',
-          '  clear    - Clear the terminal',
-          '  system   - Show system information',
-          '  uptime   - Show system uptime',
-          '  date     - Show current date and time',
-          '  ls       - List directory contents',
-          '  pwd      - Print working directory',
-          '  settings - Navigate to settings page',
+          '  help      - Show this help message',
+          '  clear     - Clear the terminal',
+          '  system    - Show system information',
+          '  uptime    - Show system uptime',
+          '  date      - Show current date and time',
+          '  ls        - List directory contents',
+          '  pwd       - Print working directory',
+          '  settings  - Navigate to settings page',
+          '  storage   - Storage management commands',
+          '    storage list     - List all storage items',
+          '    storage get      - Get a storage item value',
+          '    storage set      - Set a storage item value',
+          '    storage remove   - Remove a storage item',
+          '    storage clear    - Clear all storage items',
+          '    storage viewer   - Open storage management interface',
           ''
         ];
+        break;
+      case 'storage':
+        if (args.length < 2) {
+          response = ['Usage: storage [list|get|set|remove|clear|viewer] [key] [value]', ''];
+          break;
+        }
+
+        const subCommand = args[1];
+        switch (subCommand) {
+          case 'viewer':
+            response = ['Opening storage management interface...', ''];
+            setHistory(prev => [
+              ...prev,
+              `pi@minux:~$ ${command}`,
+              ...response
+            ]);
+            setCommand('');
+            router.push('/storage');
+            return;
+
+          case 'list':
+            try {
+              const items = Object.entries(localStorage).map(([key, value]) => ({
+                key,
+                size: new Blob([value]).size
+              }));
+              if (items.length === 0) {
+                response = ['No items in storage', ''];
+              } else {
+                response = [
+                  'Storage items:',
+                  ...items.map(item => `  ${item.key} (${item.size} bytes)`),
+                  '',
+                  `Total items: ${items.length}`,
+                  ''
+                ];
+              }
+            } catch (error) {
+              response = ['Error accessing storage', ''];
+            }
+            break;
+
+          case 'get':
+            if (args.length < 3) {
+              response = ['Usage: storage get <key>', ''];
+              break;
+            }
+            const key = args[2];
+            const value = localStorage.getItem(key);
+            if (value === null) {
+              response = [`Item "${key}" not found`, ''];
+            } else {
+              try {
+                // Try to parse as JSON for better formatting
+                const parsed = JSON.parse(value);
+                response = [
+                  `Value of "${key}":`,
+                  JSON.stringify(parsed, null, 2),
+                  ''
+                ];
+              } catch {
+                // If not JSON, show as is
+                response = [
+                  `Value of "${key}":`,
+                  value,
+                  ''
+                ];
+              }
+            }
+            break;
+
+          case 'set':
+            if (args.length < 4) {
+              response = ['Usage: storage set <key> <value>', ''];
+              break;
+            }
+            const setKey = args[2];
+            const setValue = args.slice(3).join(' ');
+            try {
+              localStorage.setItem(setKey, setValue);
+              response = [`Item "${setKey}" set successfully`, ''];
+            } catch (error) {
+              response = ['Error setting storage item', ''];
+            }
+            break;
+
+          case 'remove':
+            if (args.length < 3) {
+              response = ['Usage: storage remove <key>', ''];
+              break;
+            }
+            const removeKey = args[2];
+            if (localStorage.getItem(removeKey) === null) {
+              response = [`Item "${removeKey}" not found`, ''];
+            } else {
+              localStorage.removeItem(removeKey);
+              response = [`Item "${removeKey}" removed successfully`, ''];
+            }
+            break;
+
+          case 'clear':
+            try {
+              localStorage.clear();
+              response = ['All storage items cleared', ''];
+            } catch (error) {
+              response = ['Error clearing storage', ''];
+            }
+            break;
+
+          default:
+            response = [
+              'Invalid storage command. Available commands:',
+              '  storage list     - List all storage items',
+              '  storage get      - Get a storage item value',
+              '  storage set      - Set a storage item value',
+              '  storage remove   - Remove a storage item',
+              '  storage clear    - Clear all storage items',
+              '  storage viewer   - Open storage management interface',
+              ''
+            ];
+        }
         break;
       case 'clear':
         setHistory([]);
