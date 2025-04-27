@@ -9,7 +9,7 @@ interface JsonViewerProps {
 }
 
 export function JsonViewer({ content }: JsonViewerProps) {
-  const [isJsonView, setIsJsonView] = useState(false);
+  const [isJsonView, setIsJsonView] = useState(true);
 
   // Safely stringify any value
   const safeStringify = useCallback((value: any): string => {
@@ -22,13 +22,26 @@ export function JsonViewer({ content }: JsonViewerProps) {
       return value.toString();
     }
     if (typeof value === 'object') {
-      if (value?.$$typeof === Symbol.for('react.element')) {
-        return '[React Element]';
-      }
-      if (Array.isArray(value)) {
-        return `[${value.map(v => safeStringify(v)).join(', ')}]`;
-      }
       try {
+        // First try to parse if it's a JSON string
+        if (typeof value === 'string') {
+          try {
+            const parsed = JSON.parse(value);
+            return JSON.stringify(parsed, null, 2);
+          } catch {
+            // If parsing fails, treat as regular string
+            return value;
+          }
+        }
+        
+        // Handle regular objects
+        if (value?.$$typeof === Symbol.for('react.element')) {
+          return '[React Element]';
+        }
+        if (Array.isArray(value)) {
+          return `[${value.map(v => safeStringify(v)).join(', ')}]`;
+        }
+        
         const obj: Record<string, string> = {};
         for (const [key, val] of Object.entries(value)) {
           if (key !== '_owner' && key !== '_store' && key !== 'ref' && key !== 'key') {
@@ -44,35 +57,52 @@ export function JsonViewer({ content }: JsonViewerProps) {
   }, []);
 
   const renderContent = useCallback((rawContent: any) => {
-    // Ensure we're working with a string
-    const contentStr = typeof rawContent === 'string' ? rawContent : safeStringify(rawContent);
-    
     try {
       // Try to parse as JSON first
-      const parsed = JSON.parse(contentStr);
-      return {
-        isValid: true,
-        content: isJsonView ? safeStringify(parsed) : contentStr,
-        type: 'json'
-      };
-    } catch (e) {
-      // If it's not JSON, check if it contains React-specific content
-      if (typeof contentStr === 'string' && 
-          (contentStr.includes('useEffect') || 
-           contentStr.includes('useState') || 
-           contentStr.includes('React') || 
-           contentStr.includes('function'))) {
-        // For React content, we'll display it as a string representation
+      let parsed;
+      let contentStr = typeof rawContent === 'string' ? rawContent : safeStringify(rawContent);
+      
+      try {
+        parsed = JSON.parse(contentStr);
         return {
-          isValid: false,
-          content: typeof contentStr === 'function' ? '[Function]' : contentStr,
-          type: 'react'
+          isValid: true,
+          content: isJsonView ? JSON.stringify(parsed, null, 2) : contentStr,
+          type: 'json'
         };
+      } catch {
+        // If it's not valid JSON, try to parse it as a string that contains escaped JSON
+        try {
+          // Remove escaped quotes and try parsing again
+          const unescaped = contentStr.replace(/\\"/g, '"');
+          parsed = JSON.parse(unescaped);
+          return {
+            isValid: true,
+            content: isJsonView ? JSON.stringify(parsed, null, 2) : contentStr,
+            type: 'json'
+          };
+        } catch {
+          // If both attempts fail, handle as non-JSON content
+          if (contentStr.includes('useEffect') || 
+              contentStr.includes('useState') || 
+              contentStr.includes('React') || 
+              contentStr.includes('function')) {
+            return {
+              isValid: false,
+              content: typeof contentStr === 'function' ? '[Function]' : contentStr,
+              type: 'react'
+            };
+          }
+          return {
+            isValid: false,
+            content: contentStr,
+            type: 'text'
+          };
+        }
       }
-      // Otherwise treat as plain text
+    } catch (e) {
       return {
         isValid: false,
-        content: contentStr,
+        content: String(rawContent),
         type: 'text'
       };
     }

@@ -3,6 +3,8 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import gsap from 'gsap';
 import { Database, Trash2, Edit2, Save, X } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Rnd } from 'react-rnd';
 
 interface StorageItem {
   name: string;
@@ -15,6 +17,101 @@ interface FSNViewerProps {
   onDelete: (itemName: string) => void;
   onUpdate: (itemName: string, newContent: string) => void;
 }
+
+// Add this CSS class to your global styles or a local CSS module
+const marqueeStyles = `
+  @keyframes marquee {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-100%); }
+  }
+  .marquee-container {
+    overflow: hidden;
+    white-space: nowrap;
+    max-width: 200px;
+  }
+  .marquee-text {
+    display: inline-block;
+    animation: marquee 10s linear infinite;
+  }
+  .marquee-text:hover {
+    animation-play-state: paused;
+  }
+`;
+
+// Add this CSS at the top of your component or in a separate CSS file
+const scrollingTextStyles = `
+  .text-container {
+    max-width: 200px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .text-content {
+    white-space: nowrap;
+    display: inline-block;
+    transition: transform 0.3s;
+  }
+
+  .text-content.scrolling {
+    animation: scrollText 15s linear infinite;
+  }
+
+  .text-content.scrolling:hover {
+    animation-play-state: paused;
+  }
+
+  @keyframes scrollText {
+    0%, 10% {
+      transform: translateX(0);
+    }
+    90%, 100% {
+      transform: translateX(calc(-100% + 200px)); /* Adjust based on container width */
+    }
+  }
+`;
+
+// Add this function to check text overflow
+function useCheckTextOverflow(text: string) {
+  const [isOverflowing, setIsOverflowing] = useState(false);
+  const textRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const checkOverflow = () => {
+      if (textRef.current) {
+        const element = textRef.current;
+        setIsOverflowing(element.scrollWidth > element.clientWidth);
+      }
+    };
+
+    checkOverflow();
+    // Add resize observer to check on container size changes
+    const resizeObserver = new ResizeObserver(checkOverflow);
+    if (textRef.current) {
+      resizeObserver.observe(textRef.current);
+    }
+
+    return () => resizeObserver.disconnect();
+  }, [text]);
+
+  return { textRef, isOverflowing };
+}
+
+// In your component:
+const TextWithScroll = ({ text }: { text: string }) => {
+  const { textRef, isOverflowing } = useCheckTextOverflow(text);
+  
+  return (
+    <div className="text-container">
+      <div 
+        ref={textRef}
+        className={`text-content font-mono text-primary ${isOverflowing ? 'scrolling' : ''}`}
+        title={text} // Add tooltip for full text
+      >
+        {text}
+      </div>
+    </div>
+  );
+};
 
 export function FSNViewer({ items, onDelete, onUpdate }: FSNViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -328,62 +425,76 @@ export function FSNViewer({ items, onDelete, onUpdate }: FSNViewerProps) {
       <div ref={containerRef} className="w-full h-full" />
       
       {selectedItem && (
-        <div className="absolute top-0 right-0 w-96 m-4 bg-[#0a192f] rounded-lg border border-primary/20 overflow-hidden">
-          <div className="flex items-center justify-between px-4 py-2 bg-primary/10 border-b border-primary/20">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
-                <Database className="w-4 h-4 text-primary" />
+        <Rnd
+          default={{
+            x: 20,
+            y: 20,
+            width: 380,
+            height: 500
+          }}
+          minWidth={300}
+          minHeight={200}
+          bounds="window"
+          dragHandleClassName="panel-handle"
+        >
+          <div className="w-full h-full bg-[#0A192F] rounded-lg border border-primary/20 shadow-xl flex flex-col">
+            <div className="panel-handle cursor-move flex items-center justify-between px-4 py-2 bg-primary/10 border-b border-primary/20">
+              <style>{scrollingTextStyles}</style>
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center flex-shrink-0">
+                  <Database className="w-4 h-4 text-primary" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <TextWithScroll text={selectedItem.name} />
+                  <div className="text-xs text-gray-400 truncate">{selectedItem.size} bytes</div>
+                </div>
               </div>
-              <div>
-                <div className="text-primary font-mono">{selectedItem.name}</div>
-                <div className="text-xs text-gray-400">{selectedItem.size} bytes</div>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                {!isEditing && (
+                  <button
+                    onClick={() => handleEdit(selectedItem)}
+                    className="text-primary hover:text-primary/80 transition-colors p-2 hover:bg-primary/10 rounded-lg"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                  </button>
+                )}
+                {isEditing && (
+                  <button
+                    onClick={() => handleSave(selectedItem)}
+                    className="text-green-400 hover:text-green-300 transition-colors p-2 hover:bg-green-400/10 rounded-lg"
+                  >
+                    <Save className="w-4 h-4" />
+                  </button>
+                )}
+                <button
+                  onClick={() => handleDelete(selectedItem)}
+                  className="text-red-400 hover:text-red-300 transition-colors p-2 hover:bg-red-400/10 rounded-lg"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setSelectedItem(null)}
+                  className="text-gray-400 hover:text-gray-300 transition-colors p-2 hover:bg-gray-400/10 rounded-lg"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              {!isEditing && (
-                <button
-                  onClick={() => handleEdit(selectedItem)}
-                  className="text-primary hover:text-primary/80 transition-colors p-2 hover:bg-primary/10 rounded-lg"
-                >
-                  <Edit2 className="w-4 h-4" />
-                </button>
+            <div className="flex-1 overflow-auto p-4">
+              {isEditing ? (
+                <textarea
+                  value={editContent}
+                  onChange={(e) => setEditContent(e.target.value)}
+                  className="w-full h-full px-3 py-2 rounded-md bg-black/20 border border-primary/20 focus:outline-none focus:border-primary font-mono resize-none"
+                />
+              ) : (
+                <pre className="whitespace-pre-wrap break-all text-white/70 font-mono">
+                  {selectedItem.content}
+                </pre>
               )}
-              {isEditing && (
-                <button
-                  onClick={() => handleSave(selectedItem)}
-                  className="text-green-400 hover:text-green-300 transition-colors p-2 hover:bg-green-400/10 rounded-lg"
-                >
-                  <Save className="w-4 h-4" />
-                </button>
-              )}
-              <button
-                onClick={() => handleDelete(selectedItem)}
-                className="text-red-400 hover:text-red-300 transition-colors p-2 hover:bg-red-400/10 rounded-lg"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => setSelectedItem(null)}
-                className="text-gray-400 hover:text-gray-300 transition-colors p-2 hover:bg-gray-400/10 rounded-lg"
-              >
-                <X className="w-4 h-4" />
-              </button>
             </div>
           </div>
-          <div className="p-4">
-            {isEditing ? (
-              <textarea
-                value={editContent}
-                onChange={(e) => setEditContent(e.target.value)}
-                className="w-full h-64 bg-black/30 border border-primary/20 rounded p-3 text-white font-mono text-sm focus:outline-none focus:border-primary"
-              />
-            ) : (
-              <pre className="w-full h-64 bg-black/30 rounded p-3 font-mono text-sm overflow-auto whitespace-pre-wrap break-all">
-                {selectedItem.content}
-              </pre>
-            )}
-          </div>
-        </div>
+        </Rnd>
       )}
     </div>
   );
