@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
+import { Providers } from './providers';
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jetbrains" });
@@ -18,9 +19,11 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable} dark`}>
       <body className={`font-sans antialiased min-h-screen bg-black text-white`}>
-        <div className="relative min-h-screen">
-          {children}
-        </div>
+        <Providers>
+          <div className="relative min-h-screen">
+            {children}
+          </div>
+        </Providers>
       </body>
     </html>
   );

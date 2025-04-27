@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+import gsap from 'gsap';
 
 interface StorageItem {
   name: string;
@@ -10,11 +11,74 @@ interface StorageItem {
 
 interface FSNViewerProps {
   items: StorageItem[];
+  onDelete: (itemName: string) => void;
+  onUpdate: (itemName: string, newContent: string) => void;
 }
 
-export function FSNViewer({ items }: FSNViewerProps) {
+export function FSNViewer({ items, onDelete, onUpdate }: FSNViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [selectedItem, setSelectedItem] = useState<StorageItem | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editContent, setEditContent] = useState('');
+  const blocksRef = useRef<THREE.Mesh[]>([]);
+  const blockMapRef = useRef(new Map<THREE.Mesh, StorageItem>());
+
+  // Add ESC key handler
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setSelectedItem(null);
+        setIsEditing(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  const handleDelete = (item: StorageItem) => {
+    // Find the mesh associated with this item
+    const meshToDelete = Array.from(blockMapRef.current.entries())
+      .find(([_, storageItem]) => storageItem === item)?.[0];
+
+    if (meshToDelete) {
+      // Animate the deletion
+      gsap.to(meshToDelete.scale, {
+        x: 0,
+        y: 0,
+        z: 0,
+        duration: 0.5,
+        ease: "power2.in",
+        onComplete: () => {
+          // Call the parent's onDelete handler
+          onDelete(item.name);
+          // Close the panel
+          setSelectedItem(null);
+          // Remove from scene
+          meshToDelete.parent?.remove(meshToDelete);
+          // Clean up
+          (meshToDelete.material as THREE.Material).dispose();
+          meshToDelete.geometry.dispose();
+          blockMapRef.current.delete(meshToDelete);
+        }
+      });
+    }
+  };
+
+  const handleEdit = (item: StorageItem) => {
+    setIsEditing(true);
+    setEditContent(item.content);
+  };
+
+  const handleSave = (item: StorageItem) => {
+    onUpdate(item.name, editContent);
+    setIsEditing(false);
+    setSelectedItem({
+      ...item,
+      content: editContent,
+      size: new Blob([editContent]).size.toString()
+    });
+  };
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -26,12 +90,12 @@ export function FSNViewer({ items }: FSNViewerProps) {
 
     // Camera setup
     const camera = new THREE.PerspectiveCamera(
-      60,
+      45,
       containerRef.current.clientWidth / containerRef.current.clientHeight,
       0.1,
       1000
     );
-    camera.position.set(30, 40, 30);
+    camera.position.set(20, 20, 20);
     camera.lookAt(0, 0, 0);
 
     // Renderer setup
@@ -42,15 +106,21 @@ export function FSNViewer({ items }: FSNViewerProps) {
     renderer.setSize(containerRef.current.clientWidth, containerRef.current.clientHeight);
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.shadowMap.enabled = true;
+    
+    // Clear any existing canvas
+    while (containerRef.current.firstChild) {
+      containerRef.current.removeChild(containerRef.current.firstChild);
+    }
     containerRef.current.appendChild(renderer.domElement);
 
     // Controls
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
-    controls.minDistance = 20;
-    controls.maxDistance = 100;
-    controls.maxPolarAngle = Math.PI / 2;
+    controls.minDistance = 15;
+    controls.maxDistance = 50;
+    controls.maxPolarAngle = Math.PI / 2.5;
+    controls.target.set(0, 2, 0);
 
     // Grid helper
     const gridHelper = new THREE.GridHelper(100, 50, 0x00ff88, 0x004422);
@@ -60,15 +130,36 @@ export function FSNViewer({ items }: FSNViewerProps) {
     // Raycaster for interaction
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
-    const blockMap = new Map<THREE.Mesh, StorageItem>();
+    blockMapRef.current = new Map<THREE.Mesh, StorageItem>();
 
     // Create blocks for each storage item
     const blocks: THREE.Mesh[] = [];
+    const ROWS = Math.ceil(Math.sqrt(items.length));
+    const SPACING = 5;
+
     items.forEach((item, index) => {
-      const size = parseInt(item.size) || 1;
-      const height = Math.max(4, Math.log(size) * 2);
+      const width = 3;
+      const height = 0.4;
+      const depth = 2;
       
-      const geometry = new THREE.BoxGeometry(2, height, 2);
+      // Create folder shape
+      const shape = new THREE.Shape();
+      shape.moveTo(0, 0);
+      shape.lineTo(width, 0);
+      shape.lineTo(width, height);
+      shape.lineTo(0, height);
+      shape.lineTo(0, 0);
+
+      const extrudeSettings = {
+        steps: 1,
+        depth: depth,
+        bevelEnabled: true,
+        bevelThickness: 0.1,
+        bevelSize: 0.1,
+        bevelSegments: 1
+      };
+
+      const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
       const material = new THREE.MeshPhongMaterial({
         color: 0x00ff88,
         transparent: true,
@@ -82,19 +173,21 @@ export function FSNViewer({ items }: FSNViewerProps) {
       block.castShadow = true;
       block.receiveShadow = true;
       
-      // Position blocks in a more spread out pattern
-      const row = Math.floor(index / 5);
-      const col = index % 5;
-      const spacing = 8;
-      block.position.x = (col - 2) * spacing;
-      block.position.y = height / 2;
-      block.position.z = (row - 2) * spacing;
+      // Position blocks in a grid
+      const row = Math.floor(index / ROWS);
+      const col = index % ROWS;
+      const offsetX = (ROWS * SPACING) / 2;
+      const offsetZ = (ROWS * SPACING) / 2;
+      
+      block.position.x = (col * SPACING) - offsetX;
+      block.position.y = 0;
+      block.position.z = (row * SPACING) - offsetZ;
       
       blocks.push(block);
-      blockMap.set(block, item);
+      blockMapRef.current.set(block, item);
       scene.add(block);
 
-      // Add text label with better visibility
+      // Add text label
       const canvas = document.createElement('canvas');
       const context = canvas.getContext('2d');
       if (context) {
@@ -114,33 +207,27 @@ export function FSNViewer({ items }: FSNViewerProps) {
           opacity: 0.8
         });
         const sprite = new THREE.Sprite(spriteMaterial);
-        sprite.position.set(block.position.x, block.position.y + height + 1, block.position.z);
+        sprite.position.set(
+          block.position.x,
+          block.position.y + 1,
+          block.position.z
+        );
         sprite.scale.set(4, 1, 1);
         scene.add(sprite);
       }
+
+      // Animate block appearance
+      gsap.from(block.scale, {
+        x: 0,
+        y: 0,
+        z: 0,
+        duration: 0.5,
+        delay: index * 0.1,
+        ease: "back.out(1.7)"
+      });
     });
 
-    // Enhanced lighting
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
-    scene.add(ambientLight);
-
-    const directionalLight = new THREE.DirectionalLight(0x00ff88, 1);
-    directionalLight.position.set(10, 20, 10);
-    directionalLight.castShadow = true;
-    scene.add(directionalLight);
-
-    // Add volumetric light effect
-    const volumetricLightGeometry = new THREE.CylinderGeometry(0, 3, 15, 32);
-    const volumetricLightMaterial = new THREE.MeshBasicMaterial({
-      color: 0x00ff88,
-      transparent: true,
-      opacity: 0.1,
-      side: THREE.DoubleSide
-    });
-    const volumetricLight = new THREE.Mesh(volumetricLightGeometry, volumetricLightMaterial);
-    volumetricLight.position.set(10, 10, 10);
-    volumetricLight.rotation.x = Math.PI;
-    scene.add(volumetricLight);
+    blocksRef.current = blocks;
 
     // Click handler
     const handleClick = (event: MouseEvent) => {
@@ -153,7 +240,7 @@ export function FSNViewer({ items }: FSNViewerProps) {
 
       if (intersects.length > 0) {
         const clickedBlock = intersects[0].object as THREE.Mesh;
-        const item = blockMap.get(clickedBlock);
+        const item = blockMapRef.current.get(clickedBlock);
         if (item) {
           setSelectedItem(item);
           // Highlight selected block
@@ -164,22 +251,45 @@ export function FSNViewer({ items }: FSNViewerProps) {
           (clickedBlock.material as THREE.MeshPhongMaterial).opacity = 1;
           (clickedBlock.material as THREE.MeshPhongMaterial).emissiveIntensity = 0.5;
         }
+      } else {
+        // Click outside blocks - clear selection
+        setSelectedItem(null);
+        setIsEditing(false);
+        // Reset all blocks appearance
+        blocks.forEach(block => {
+          (block.material as THREE.MeshPhongMaterial).opacity = 0.6;
+          (block.material as THREE.MeshPhongMaterial).emissiveIntensity = 0.2;
+        });
       }
     };
+
+    // Double click handler
+    const handleDoubleClick = (event: MouseEvent) => {
+      const rect = renderer.domElement.getBoundingClientRect();
+      mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObjects(blocks);
+
+      if (intersects.length > 0) {
+        const clickedBlock = intersects[0].object as THREE.Mesh;
+        const item = blockMapRef.current.get(clickedBlock);
+        if (item) {
+          setSelectedItem(item);
+          setIsEditing(true);
+          setEditContent(item.content);
+        }
+      }
+    };
+
     renderer.domElement.addEventListener('click', handleClick);
+    renderer.domElement.addEventListener('dblclick', handleDoubleClick);
 
     // Animation loop
     let animationFrameId: number;
     const animate = () => {
       animationFrameId = requestAnimationFrame(animate);
-      
-      blocks.forEach((block, index) => {
-        block.rotation.y += 0.005;
-        const hoverOffset = Math.sin(Date.now() * 0.001 + index) * 0.1;
-        block.position.y += hoverOffset;
-      });
-      
-      volumetricLight.rotation.y += 0.01;
       controls.update();
       renderer.render(scene, camera);
     };
@@ -199,6 +309,7 @@ export function FSNViewer({ items }: FSNViewerProps) {
     return () => {
       window.removeEventListener('resize', handleResize);
       renderer.domElement.removeEventListener('click', handleClick);
+      renderer.domElement.removeEventListener('dblclick', handleDoubleClick);
       cancelAnimationFrame(animationFrameId);
       renderer.dispose();
       blocks.forEach(block => {
@@ -209,17 +320,65 @@ export function FSNViewer({ items }: FSNViewerProps) {
         containerRef.current.removeChild(renderer.domElement);
       }
     };
-  }, [items]);
+  }, [items, onDelete, onUpdate]);
 
   return (
-    <div className="relative">
-      <div ref={containerRef} className="w-full h-[600px]" />
+    <div className="relative w-full h-full">
+      <div ref={containerRef} className="w-full h-full" />
       {selectedItem && (
-        <div className="absolute bottom-4 left-4 right-4 bg-black/80 backdrop-blur-xl p-4 rounded-lg border border-primary/20">
-          <h3 className="text-primary font-mono text-lg mb-2">{selectedItem.name}</h3>
-          <p className="text-gray-400 font-mono text-sm overflow-auto max-h-32">
-            {selectedItem.content}
-          </p>
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[90%] max-w-4xl bg-[#0a192f] border border-primary rounded-lg overflow-hidden">
+          <div className="flex justify-between items-center mb-2">
+            <h3 className="text-primary font-mono text-lg">{selectedItem.name}</h3>
+            <div className="flex gap-2">
+              <button 
+                onClick={() => handleEdit(selectedItem)}
+                className="text-primary hover:text-primary/80 transition-colors px-3 py-1 rounded bg-primary/20"
+              >
+                Edit
+              </button>
+              <button 
+                onClick={() => handleDelete(selectedItem)}
+                className="text-red-500 hover:text-red-400 transition-colors px-3 py-1 rounded bg-red-500/20"
+              >
+                Delete
+              </button>
+              <button 
+                onClick={() => setSelectedItem(null)}
+                className="text-primary hover:text-primary/80 transition-colors"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              </button>
+            </div>
+          </div>
+          {isEditing ? (
+            <div>
+              <textarea
+                value={editContent}
+                onChange={(e) => setEditContent(e.target.value)}
+                className="w-full h-32 bg-black/50 text-primary font-mono text-sm p-2 rounded border border-primary/20 focus:outline-none focus:border-primary/40"
+              />
+              <div className="flex justify-end gap-2 mt-2">
+                <button
+                  onClick={() => setIsEditing(false)}
+                  className="text-gray-400 hover:text-gray-300 transition-colors px-3 py-1 rounded bg-gray-500/20"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => handleSave(selectedItem)}
+                  className="text-primary hover:text-primary/80 transition-colors px-3 py-1 rounded bg-primary/20"
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+          ) : (
+            <p className="text-gray-400 font-mono text-sm overflow-auto max-h-32">
+              {selectedItem.content}
+            </p>
+          )}
         </div>
       )}
     </div>

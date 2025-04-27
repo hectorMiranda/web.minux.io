@@ -1,143 +1,123 @@
 'use client';
 
 import React, { useState, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
+import { Code, FileText } from 'lucide-react';
 
 interface JsonViewerProps {
   content: string;
 }
 
-type JsonValue = 
-  | string
-  | number
-  | boolean
-  | null
-  | { [key: string]: JsonValue }
-  | JsonValue[];
-
 export function JsonViewer({ content }: JsonViewerProps) {
   const [isJsonView, setIsJsonView] = useState(false);
-  const [expandedPaths, setExpandedPaths] = useState<Set<string>>(new Set(['root']));
 
-  const isJsonContent = useCallback(() => {
-    try {
-      JSON.parse(content);
-      return true;
-    } catch {
-      return false;
+  // Safely stringify any value
+  const safeStringify = useCallback((value: any): string => {
+    if (value === null) return 'null';
+    if (value === undefined) return 'undefined';
+    if (typeof value === 'function') {
+      return `[Function: ${value.name || 'anonymous'}]`;
     }
-  }, [content]);
-
-  const togglePath = (path: string) => {
-    setExpandedPaths(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(path)) {
-        newSet.delete(path);
-      } else {
-        newSet.add(path);
+    if (typeof value === 'symbol') {
+      return value.toString();
+    }
+    if (typeof value === 'object') {
+      if (value?.$$typeof === Symbol.for('react.element')) {
+        return '[React Element]';
       }
-      return newSet;
-    });
-  };
-
-  const renderJsonValue = (value: JsonValue, path: string = 'root', level: number = 0): React.ReactNode => {
-    const indent = '  '.repeat(level);
-    const isExpanded = expandedPaths.has(path);
-
-    if (Array.isArray(value)) {
-      const items = value.map((item, index) => {
-        const itemPath = `${path}.${index}`;
-        return renderJsonValue(item, itemPath, level + 1);
-      });
-
-      return (
-        <div className="ml-4">
-          <span 
-            className="cursor-pointer hover:text-primary-600"
-            onClick={() => togglePath(path)}
-          >
-            {isExpanded ? '▼' : '▶'} [
-          </span>
-          {isExpanded && (
-            <>
-              {items}
-              <div>{indent}]</div>
-            </>
-          )}
-          {!isExpanded && <span>...]</span>}
-        </div>
-      );
-    } else if (typeof value === 'object' && value !== null) {
-      const entries = Object.entries(value);
-      return (
-        <div className="ml-4">
-          <span 
-            className="cursor-pointer hover:text-primary-600"
-            onClick={() => togglePath(path)}
-          >
-            {isExpanded ? '▼' : '▶'} {'{'}
-          </span>
-          {isExpanded && (
-            <>
-              {entries.map(([key, val]) => (
-                <div key={key}>
-                  {indent}  &quot;{key}&quot;: {renderJsonValue(val, `${path}.${key}`, level + 1)}
-                </div>
-              ))}
-              <div>{indent}{'}'}</div>
-            </>
-          )}
-          {!isExpanded && <span>{'...'}</span>}
-        </div>
-      );
+      if (Array.isArray(value)) {
+        return `[${value.map(v => safeStringify(v)).join(', ')}]`;
+      }
+      try {
+        const obj: Record<string, string> = {};
+        for (const [key, val] of Object.entries(value)) {
+          if (key !== '_owner' && key !== '_store' && key !== 'ref' && key !== 'key') {
+            obj[key] = safeStringify(val);
+          }
+        }
+        return JSON.stringify(obj, null, 2);
+      } catch (e) {
+        return '[Object]';
+      }
     }
+    return String(value);
+  }, []);
 
-    return (
-      <span className={typeof value === 'string' ? 'text-green-400' : 'text-blue-400'}>
-        {typeof value === 'string' ? <>&quot;{value}&quot;</> : String(value)}
-      </span>
-    );
-  };
+  const renderContent = useCallback((rawContent: any) => {
+    // Ensure we're working with a string
+    const contentStr = typeof rawContent === 'string' ? rawContent : safeStringify(rawContent);
+    
+    try {
+      // Try to parse as JSON first
+      const parsed = JSON.parse(contentStr);
+      return {
+        isValid: true,
+        content: isJsonView ? safeStringify(parsed) : contentStr,
+        type: 'json'
+      };
+    } catch (e) {
+      // If it's not JSON, check if it contains React-specific content
+      if (typeof contentStr === 'string' && 
+          (contentStr.includes('useEffect') || 
+           contentStr.includes('useState') || 
+           contentStr.includes('React') || 
+           contentStr.includes('function'))) {
+        return {
+          isValid: false,
+          content: contentStr,
+          type: 'react'
+        };
+      }
+      // Otherwise treat as plain text
+      return {
+        isValid: false,
+        content: contentStr,
+        type: 'text'
+      };
+    }
+  }, [isJsonView, safeStringify]);
 
-  if (!isJsonContent()) {
-    return (
-      <div className="font-mono text-sm whitespace-pre-wrap break-all">
-        {content}
-      </div>
-    );
-  }
+  const { isValid, content: displayContent, type } = renderContent(content);
 
   return (
-    <div className="relative font-mono text-sm">
-      <button
-        onClick={() => setIsJsonView(!isJsonView)}
-        className="absolute top-2 right-2 px-2 py-1 text-xs bg-primary/20 hover:bg-primary/30 text-primary rounded transition-colors duration-200"
-      >
-        {isJsonView ? 'Raw' : 'JSON'}
-      </button>
-      <AnimatePresence mode="wait">
-        {isJsonView ? (
-          <motion.div
-            key="json"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="pt-10"
+    <div className="w-full">
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          {type === 'json' ? (
+            <Code className="w-4 h-4 text-green-400" />
+          ) : type === 'react' ? (
+            <Code className="w-4 h-4 text-yellow-400" />
+          ) : (
+            <FileText className="w-4 h-4 text-blue-400" />
+          )}
+          <span className={`text-xs ${
+            type === 'json' ? 'text-green-400' : 
+            type === 'react' ? 'text-yellow-400' : 
+            'text-blue-400'
+          }`}>
+            {type === 'json' ? 'JSON' : 
+             type === 'react' ? 'React Content' : 
+             'Plain Text'}
+          </span>
+        </div>
+        {type === 'json' && (
+          <button
+            onClick={() => setIsJsonView(!isJsonView)}
+            className="text-xs bg-primary/20 hover:bg-primary/30 text-primary px-2 py-1 rounded"
           >
-            {renderJsonValue(JSON.parse(content))}
-          </motion.div>
-        ) : (
-          <motion.div
-            key="raw"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="whitespace-pre-wrap break-all pt-10"
-          >
-            {content}
-          </motion.div>
+            {isJsonView ? 'Raw' : 'Formatted'}
+          </button>
         )}
-      </AnimatePresence>
+      </div>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="bg-black/30 rounded p-3 font-mono text-sm overflow-x-auto"
+      >
+        <pre className="whitespace-pre-wrap break-all">
+          {displayContent}
+        </pre>
+      </motion.div>
     </div>
   );
 } 
