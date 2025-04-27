@@ -8,11 +8,6 @@ interface JsonViewerProps {
   content: string;
 }
 
-interface SafeStringifyValue {
-  value: unknown;
-  type: string;
-}
-
 export function JsonViewer({ content }: JsonViewerProps) {
   const [isJsonView, setIsJsonView] = useState(true);
 
@@ -60,7 +55,7 @@ export function JsonViewer({ content }: JsonViewerProps) {
     return String(value);
   }, []);
 
-  const renderContent = useCallback((rawContent: any) => {
+  const renderContent = useCallback((rawContent: unknown) => {
     try {
       // Try to parse as JSON first
       let parsed;
@@ -69,7 +64,6 @@ export function JsonViewer({ content }: JsonViewerProps) {
       try {
         parsed = JSON.parse(contentStr);
         return {
-          isValid: true,
           content: isJsonView ? JSON.stringify(parsed, null, 2) : contentStr,
           type: 'json'
         };
@@ -80,7 +74,6 @@ export function JsonViewer({ content }: JsonViewerProps) {
           const unescaped = contentStr.replace(/\\"/g, '"');
           parsed = JSON.parse(unescaped);
           return {
-            isValid: true,
             content: isJsonView ? JSON.stringify(parsed, null, 2) : contentStr,
             type: 'json'
           };
@@ -91,13 +84,11 @@ export function JsonViewer({ content }: JsonViewerProps) {
               contentStr.includes('React') || 
               contentStr.includes('function')) {
             return {
-              isValid: false,
               content: typeof contentStr === 'function' ? '[Function]' : contentStr,
               type: 'react'
             };
           }
           return {
-            isValid: false,
             content: contentStr,
             type: 'text'
           };
@@ -105,14 +96,13 @@ export function JsonViewer({ content }: JsonViewerProps) {
       }
     } catch {
       return {
-        isValid: false,
         content: String(rawContent),
         type: 'text'
       };
     }
   }, [isJsonView, safeStringify]);
 
-  const { isValid, content: displayContent, type } = renderContent(content);
+  const { content: displayContent, type } = renderContent(content);
 
   return (
     <div className="w-full">

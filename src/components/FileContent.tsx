@@ -25,7 +25,7 @@ export function FileContent({
   sourcePosition 
 }: FileContentProps) {
   const [isDragging, setIsDragging] = useState(false);
-  const [pos, setPos] = useState(position || { x: 0, y: 0 });
+  const [pos] = useState(position || { x: 0, y: 0 });
   const constraintsRef = useRef(null);
   const [isHovered, setIsHovered] = useState(false);
   const [isMarquee, setIsMarquee] = useState(false);
@@ -37,12 +37,6 @@ export function FileContent({
       setIsMarquee(nameRef.current.scrollWidth > nameRef.current.clientWidth);
     }
   }, [name]);
-
-  const handleClose = () => {
-    if (onClose) {
-      onClose();
-    }
-  };
 
   return (
     <motion.div

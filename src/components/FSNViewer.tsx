@@ -19,26 +19,6 @@ interface FSNViewerProps {
 }
 
 // Add this CSS class to your global styles or a local CSS module
-const marqueeStyles = `
-  @keyframes marquee {
-    0% { transform: translateX(0); }
-    100% { transform: translateX(-100%); }
-  }
-  .marquee-container {
-    overflow: hidden;
-    white-space: nowrap;
-    max-width: 200px;
-  }
-  .marquee-text {
-    display: inline-block;
-    animation: marquee 10s linear infinite;
-  }
-  .marquee-text:hover {
-    animation-play-state: paused;
-  }
-`;
-
-// Add this CSS at the top of your component or in a separate CSS file
 const scrollingTextStyles = `
   .text-container {
     max-width: 200px;
@@ -137,7 +117,7 @@ export function FSNViewer({ items, onDelete, onUpdate }: FSNViewerProps) {
   const handleDelete = (item: StorageItem) => {
     // Find the mesh associated with this item
     const meshToDelete = Array.from(blockMapRef.current.entries())
-      .find(([mesh, storageItem]) => storageItem === item)?.[0];
+      .find(([_, storageItem]) => storageItem === item)?.[0];
 
     if (meshToDelete) {
       // Animate the deletion

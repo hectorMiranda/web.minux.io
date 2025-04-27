@@ -102,7 +102,7 @@ export default function StoragePage() {
   const [viewMode, setViewMode] = useState<'classic' | '3d'>('classic');
   const [showAddModal, setShowAddModal] = useState(false);
   const [storageItems, setStorageItems] = useState<StorageItem[]>([]);
-  const [selectedItem, setSelectedItem] = useState<string | null>(null);
+  const [, setSelectedItem] = useState<string | null>(null);
   const itemPositionsRef = useRef<Map<string, { x: number; y: number }>>(new Map());
   const sourcePositionRef = useRef<{ x: number; y: number } | undefined>(undefined);
 
