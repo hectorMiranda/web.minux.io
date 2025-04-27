@@ -17,15 +17,6 @@ export function Providers({ children }: { children: React.ReactNode }) {
       }
     };
 
-    // Handle direct localStorage access
-    const originalRemoveItem = localStorage.removeItem;
-    localStorage.removeItem = function(key: string) {
-      if (key === 'isAuthenticated') {
-        router.push('/');
-      }
-      return originalRemoveItem.call(localStorage, key);
-    };
-
     // Listen for storage events (works across tabs)
     window.addEventListener('storage', handleStorageChange);
 
@@ -36,7 +27,6 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
     return () => {
       window.removeEventListener('storage', handleStorageChange);
-      localStorage.removeItem = originalRemoveItem;
     };
   }, [router]);
 

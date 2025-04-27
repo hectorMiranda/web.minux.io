@@ -169,8 +169,6 @@ export default function StoragePage() {
           />
         </div>
 
-
-
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -203,6 +201,7 @@ export default function StoragePage() {
                       content={item.content}
                       size={item.size}
                       onDelete={handleDeleteItem}
+                      onUpdate={handleUpdateItem}
                       position={itemPositionsRef.current.get(item.name)}
                       sourcePosition={sourcePositionRef.current}
                       onClose={() => handlePanelClose(item.name)}
