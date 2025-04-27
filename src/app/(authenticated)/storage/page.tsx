@@ -4,7 +4,8 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FileContent } from '@/components/FileContent';
 import { FSNViewer } from '@/components/FSNViewer';
-import { View, ViewIcon, Plus, X } from 'lucide-react';
+import { X, Plus } from 'lucide-react';
+import { StorageToolbar } from './components/StorageToolbar';
 
 interface StorageItem {
   name: string;
@@ -98,7 +99,7 @@ function AddItemModal({ onClose, onAdd }: AddItemModalProps) {
 }
 
 export default function StoragePage() {
-  const [is3DView, setIs3DView] = useState(false);
+  const [viewMode, setViewMode] = useState<'classic' | '3d'>('classic');
   const [showAddModal, setShowAddModal] = useState(false);
   const [storageItems, setStorageItems] = useState<StorageItem[]>([]);
   const [selectedItem, setSelectedItem] = useState<string | null>(null);
@@ -161,25 +162,14 @@ export default function StoragePage() {
             <h1 className="text-2xl font-bold text-primary mb-2">Storage Management</h1>
             <p className="text-gray-400">Manage local storage data and monitor storage usage.</p>
           </div>
-          <button
-            onClick={() => setIs3DView(!is3DView)}
-            className="px-4 py-2 bg-primary/20 hover:bg-primary/30 text-primary rounded-lg transition-colors duration-200 flex items-center gap-2"
-          >
-            {is3DView ? <View className="w-4 h-4" /> : <ViewIcon className="w-4 h-4" />}
-            {is3DView ? 'Classic View' : '3D View'}
-          </button>
+          <StorageToolbar 
+            viewMode={viewMode}
+            onViewChange={setViewMode}
+            onAddItem={() => setShowAddModal(true)}
+          />
         </div>
 
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl text-primary">Local Storage Explorer</h2>
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="px-3 py-2 bg-primary/20 hover:bg-primary/30 text-primary rounded-lg transition-colors duration-200 flex items-center gap-2"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Add Item</span>
-          </button>
-        </div>
+
 
         <motion.div
           initial={{ opacity: 0 }}
@@ -187,8 +177,8 @@ export default function StoragePage() {
           transition={{ duration: 0.3 }}
           className="relative"
         >
-          {is3DView ? (
-            <div className="w-[80%] h-[80vh] mx-auto">
+          {viewMode === '3d' ? (
+            <div className="w-full h-[80vh]">
               <FSNViewer 
                 items={storageItems} 
                 onDelete={handleDeleteItem}
