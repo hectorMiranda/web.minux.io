@@ -8,11 +8,15 @@ interface JsonViewerProps {
   content: string;
 }
 
+interface SafeStringifyValue {
+  value: unknown;
+  type: string;
+}
+
 export function JsonViewer({ content }: JsonViewerProps) {
   const [isJsonView, setIsJsonView] = useState(true);
 
-  // Safely stringify any value
-  const safeStringify = useCallback((value: any): string => {
+  const safeStringify = useCallback((value: unknown): string => {
     if (value === null) return 'null';
     if (value === undefined) return 'undefined';
     if (typeof value === 'function') {
@@ -49,7 +53,7 @@ export function JsonViewer({ content }: JsonViewerProps) {
           }
         }
         return JSON.stringify(obj, null, 2);
-      } catch (e) {
+      } catch {
         return '[Object]';
       }
     }
@@ -60,7 +64,7 @@ export function JsonViewer({ content }: JsonViewerProps) {
     try {
       // Try to parse as JSON first
       let parsed;
-      let contentStr = typeof rawContent === 'string' ? rawContent : safeStringify(rawContent);
+      const contentStr = typeof rawContent === 'string' ? rawContent : safeStringify(rawContent);
       
       try {
         parsed = JSON.parse(contentStr);
@@ -99,7 +103,7 @@ export function JsonViewer({ content }: JsonViewerProps) {
           };
         }
       }
-    } catch (e) {
+    } catch {
       return {
         isValid: false,
         content: String(rawContent),

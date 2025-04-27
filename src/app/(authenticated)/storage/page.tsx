@@ -4,7 +4,7 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FileContent } from '@/components/FileContent';
 import { FSNViewer } from '@/components/FSNViewer';
-import { X, Plus } from 'lucide-react';
+import { X } from 'lucide-react';
 import { StorageToolbar } from './components/StorageToolbar';
 
 interface StorageItem {
@@ -150,7 +150,7 @@ export default function StoragePage() {
     setSelectedItem(item.name);
   }, []);
 
-  const handlePanelClose = useCallback((itemName: string) => {
+  const handlePanelClose = useCallback(() => {
     setSelectedItem(null);
   }, []);
 
@@ -204,7 +204,7 @@ export default function StoragePage() {
                       onUpdate={handleUpdateItem}
                       position={itemPositionsRef.current.get(item.name)}
                       sourcePosition={sourcePositionRef.current}
-                      onClose={() => handlePanelClose(item.name)}
+                      onClose={() => handlePanelClose()}
                     />
                   </motion.div>
                 ))}

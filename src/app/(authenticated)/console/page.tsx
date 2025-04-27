@@ -88,7 +88,8 @@ export default function ConsolePage() {
                   ''
                 ];
               }
-            } catch (error) {
+            } catch (err) {
+              console.error('Storage error:', err);
               response = ['Error accessing storage', ''];
             }
             break;

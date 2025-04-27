@@ -137,7 +137,7 @@ export function FSNViewer({ items, onDelete, onUpdate }: FSNViewerProps) {
   const handleDelete = (item: StorageItem) => {
     // Find the mesh associated with this item
     const meshToDelete = Array.from(blockMapRef.current.entries())
-      .find(([_, storageItem]) => storageItem === item)?.[0];
+      .find(([mesh, storageItem]) => storageItem === item)?.[0];
 
     if (meshToDelete) {
       // Animate the deletion
@@ -180,7 +180,9 @@ export function FSNViewer({ items, onDelete, onUpdate }: FSNViewerProps) {
 
   useEffect(() => {
     if (!containerRef.current) return;
-
+    
+    const currentContainer = containerRef.current;
+    
     // Scene setup
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x0a192f);
@@ -189,7 +191,7 @@ export function FSNViewer({ items, onDelete, onUpdate }: FSNViewerProps) {
     // Camera setup
     const camera = new THREE.PerspectiveCamera(
       45,
-      containerRef.current.clientWidth / containerRef.current.clientHeight,
+      currentContainer.clientWidth / currentContainer.clientHeight,
       0.1,
       1000
     );
@@ -201,15 +203,15 @@ export function FSNViewer({ items, onDelete, onUpdate }: FSNViewerProps) {
       antialias: true,
       alpha: true 
     });
-    renderer.setSize(containerRef.current.clientWidth, containerRef.current.clientHeight);
+    renderer.setSize(currentContainer.clientWidth, currentContainer.clientHeight);
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.shadowMap.enabled = true;
     
     // Clear any existing canvas
-    while (containerRef.current.firstChild) {
-      containerRef.current.removeChild(containerRef.current.firstChild);
+    while (currentContainer.firstChild) {
+      currentContainer.removeChild(currentContainer.firstChild);
     }
-    containerRef.current.appendChild(renderer.domElement);
+    currentContainer.appendChild(renderer.domElement);
 
     // Controls
     const controls = new OrbitControls(camera, renderer.domElement);
@@ -395,27 +397,29 @@ export function FSNViewer({ items, onDelete, onUpdate }: FSNViewerProps) {
 
     // Handle resize
     const handleResize = () => {
-      if (!containerRef.current) return;
+      if (!currentContainer) return;
       
-      camera.aspect = containerRef.current.clientWidth / containerRef.current.clientHeight;
+      camera.aspect = currentContainer.clientWidth / currentContainer.clientHeight;
       camera.updateProjectionMatrix();
-      renderer.setSize(containerRef.current.clientWidth, containerRef.current.clientHeight);
+      renderer.setSize(currentContainer.clientWidth, currentContainer.clientHeight);
     };
     window.addEventListener('resize', handleResize);
 
     // Cleanup
     return () => {
-      window.removeEventListener('resize', handleResize);
-      renderer.domElement.removeEventListener('click', handleClick);
-      renderer.domElement.removeEventListener('dblclick', handleDoubleClick);
-      cancelAnimationFrame(animationFrameId);
-      renderer.dispose();
-      blocks.forEach(block => {
-        block.geometry.dispose();
-        (block.material as THREE.Material).dispose();
-      });
-      if (containerRef.current && renderer.domElement) {
-        containerRef.current.removeChild(renderer.domElement);
+      if (currentContainer) {
+        window.removeEventListener('resize', handleResize);
+        renderer.domElement.removeEventListener('click', handleClick);
+        renderer.domElement.removeEventListener('dblclick', handleDoubleClick);
+        cancelAnimationFrame(animationFrameId);
+        renderer.dispose();
+        blocks.forEach(block => {
+          block.geometry.dispose();
+          (block.material as THREE.Material).dispose();
+        });
+        if (currentContainer && renderer.domElement) {
+          currentContainer.removeChild(renderer.domElement);
+        }
       }
     };
   }, [items, onDelete, onUpdate]);

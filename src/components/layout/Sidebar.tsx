@@ -24,7 +24,7 @@ import { MinuxLogo } from '../MinuxLogo';
 import { useSettingsStore } from '@/lib/settings';
 
 interface MenuItem {
-  icon: React.ReactElement;
+  icon: string;
   label: string;
   href: string;
   description?: string;
@@ -33,84 +33,84 @@ interface MenuItem {
 
 const defaultMenuItems: MenuItem[] = [
   {
-    icon: <Terminal className="w-5 h-5" />,
+    icon: 'Terminal',
     label: 'Console',
     href: '/console',
     description: 'System terminal access',
     visible: true,
   },
   {
-    icon: <Home className="w-5 h-5" />,
+    icon: 'Home',
     label: 'Dashboard',
     href: '/dashboard',
     description: 'System overview and status',
     visible: true,
   },
   {
-    icon: <Cpu className="w-5 h-5" />,
+    icon: 'Cpu',
     label: 'System',
     href: '/system',
     description: 'CPU, memory, and processes',
     visible: true,
   },
   {
-    icon: <Thermometer className="w-5 h-5" />,
+    icon: 'Thermometer',
     label: 'Sensors',
     href: '/sensors',
     description: 'Temperature and voltage monitoring',
     visible: true,
   },
   {
-    icon: <Network className="w-5 h-5" />,
+    icon: 'Network',
     label: 'Network',
     href: '/network',
     description: 'Network interfaces and statistics',
     visible: true,
   },
   {
-    icon: <Wifi className="w-5 h-5" />,
+    icon: 'Wifi',
     label: 'Wi-Fi',
     href: '/wifi',
     description: 'Wireless network configuration',
     visible: true,
   },
   {
-    icon: <HardDrive className="w-5 h-5" />,
+    icon: 'HardDrive',
     label: 'Storage',
     href: '/storage',
     description: 'Disk usage and management',
     visible: true,
   },
   {
-    icon: <Gauge className="w-5 h-5" />,
+    icon: 'Gauge',
     label: 'Performance',
     href: '/performance',
     description: 'System performance metrics',
     visible: true,
   },
   {
-    icon: <Settings className="w-5 h-5" />,
+    icon: 'Settings',
     label: 'Settings',
     href: '/settings',
     description: 'System configuration',
     visible: true,
   },
   {
-    icon: <Power className="w-5 h-5" />,
+    icon: 'Power',
     label: 'Power',
     href: '/power',
     description: 'Power management and control',
     visible: true,
   },
   {
-    icon: <Lock className="w-5 h-5" />,
+    icon: 'Lock',
     label: 'Security',
     href: '/security',
     description: 'System security settings',
     visible: true,
   },
   {
-    icon: <Blocks className="w-5 h-5" />,
+    icon: 'Blocks',
     label: 'Blockchain',
     href: '/blockchain',
     description: 'Blockchain-related operations',
@@ -123,12 +123,12 @@ export const Sidebar = () => {
   const router = useRouter();
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
-  const { menuItems: savedMenuItems, homePage, setMenuItems } = useSettingsStore();
+  const { menuItems: savedMenuItems, homePage } = useSettingsStore();
   const [menuItems, setLocalMenuItems] = useState<MenuItem[]>(defaultMenuItems);
 
   useEffect(() => {
     if (savedMenuItems.length > 0) {
-      const itemsWithIcons = savedMenuItems.map((item: any) => ({
+      const itemsWithIcons = savedMenuItems.map((item: MenuItem) => ({
         ...item,
         icon: getIconComponent(item.icon)
       }));
