@@ -103,6 +103,13 @@ const defaultMenuItems: MenuItem[] = [
     description: 'Blockchain-related operations',
     visible: true,
   },
+  {
+    icon: 'Music',
+    label: 'MIDI Controller',
+    href: '/midi',
+    description: 'Virtual MIDI keyboard and controller',
+    visible: true,
+  },
 ];
 
 export default function SettingsPage() {

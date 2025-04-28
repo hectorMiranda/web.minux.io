@@ -18,7 +18,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Blocks,
-  Lock
+  Lock,
+  Music
 } from 'lucide-react';
 import { MinuxLogo } from '../MinuxLogo';
 import { useSettingsStore } from '@/lib/settings';
@@ -116,6 +117,13 @@ const defaultMenuItems: MenuItem[] = [
     description: 'Blockchain-related operations',
     visible: true,
   },
+  {
+    icon: 'Music',
+    label: 'MIDI Controller',
+    href: '/midi',
+    description: 'Virtual MIDI keyboard and controller',
+    visible: true,
+  },
 ];
 
 export const Sidebar = () => {
@@ -162,6 +170,8 @@ export const Sidebar = () => {
         return <Lock className="w-5 h-5" />;
       case 'Blocks':
         return <Blocks className="w-5 h-5" />;
+      case 'Music':
+        return <Music className="w-5 h-5" />;
       default:
         return <Home className="w-5 h-5" />;
     }
