@@ -133,7 +133,7 @@ export default function ConsolePage() {
             try {
               localStorage.setItem(setKey, setValue);
               response = [`Item "${setKey}" set successfully`, ''];
-            } catch (_) {
+            } catch {
               response = ['Error setting storage item', ''];
             }
             break;
@@ -156,7 +156,7 @@ export default function ConsolePage() {
             try {
               localStorage.clear();
               response = ['All storage items cleared', ''];
-            } catch (_) {
+            } catch {
               response = ['Error clearing storage', ''];
             }
             break;

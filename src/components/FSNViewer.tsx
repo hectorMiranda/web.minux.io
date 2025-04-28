@@ -3,7 +3,6 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import gsap from 'gsap';
 import { Database, Trash2, Edit2, Save, X } from 'lucide-react';
-import { motion } from 'framer-motion';
 import { Rnd } from 'react-rnd';
 
 interface StorageItem {
@@ -117,7 +116,7 @@ export function FSNViewer({ items, onDelete, onUpdate }: FSNViewerProps) {
   const handleDelete = (item: StorageItem) => {
     // Find the mesh associated with this item
     const meshToDelete = Array.from(blockMapRef.current.entries())
-      .find(([_, storageItem]) => storageItem === item)?.[0];
+      .find(([, storageItem]) => storageItem === item)?.[0];
 
     if (meshToDelete) {
       // Animate the deletion
