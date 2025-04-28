@@ -24,7 +24,7 @@ import { MinuxLogo } from '../MinuxLogo';
 import { useSettingsStore } from '@/lib/settings';
 
 interface MenuItem {
-  icon: string | React.ReactElement;
+  icon: string;
   label: string;
   href: string;
   description?: string;
@@ -128,35 +128,43 @@ export const Sidebar = () => {
 
   useEffect(() => {
     if (savedMenuItems.length > 0) {
-      const itemsWithIcons = savedMenuItems.map((item: MenuItem) => ({
-        ...item,
-        icon: typeof item.icon === 'string' ? getIconComponent(item.icon) : item.icon
-      }));
-      setLocalMenuItems(itemsWithIcons as MenuItem[]);
+      setLocalMenuItems(savedMenuItems);
     }
 
-    // Redirect to home page if on root
     if (pathname === '/') {
       router.push(homePage);
     }
   }, [pathname, router, homePage, savedMenuItems]);
 
-  const getIconComponent = (iconName: string): React.ReactElement => {
-    const iconMap: { [key: string]: React.ReactElement } = {
-      Terminal: <Terminal className="w-5 h-5" />,
-      Home: <Home className="w-5 h-5" />,
-      Cpu: <Cpu className="w-5 h-5" />,
-      Thermometer: <Thermometer className="w-5 h-5" />,
-      Network: <Network className="w-5 h-5" />,
-      Wifi: <Wifi className="w-5 h-5" />,
-      HardDrive: <HardDrive className="w-5 h-5" />,
-      Gauge: <Gauge className="w-5 h-5" />,
-      Settings: <Settings className="w-5 h-5" />,
-      Power: <Power className="w-5 h-5" />,
-      Lock: <Lock className="w-5 h-5" />,
-      Blocks: <Blocks className="w-5 h-5" />,
-    };
-    return iconMap[iconName] || <Home className="w-5 h-5" />;
+  const getIconComponent = (iconName: string) => {
+    switch (iconName) {
+      case 'Terminal':
+        return <Terminal className="w-5 h-5" />;
+      case 'Home':
+        return <Home className="w-5 h-5" />;
+      case 'Cpu':
+        return <Cpu className="w-5 h-5" />;
+      case 'Thermometer':
+        return <Thermometer className="w-5 h-5" />;
+      case 'Network':
+        return <Network className="w-5 h-5" />;
+      case 'Wifi':
+        return <Wifi className="w-5 h-5" />;
+      case 'HardDrive':
+        return <HardDrive className="w-5 h-5" />;
+      case 'Gauge':
+        return <Gauge className="w-5 h-5" />;
+      case 'Settings':
+        return <Settings className="w-5 h-5" />;
+      case 'Power':
+        return <Power className="w-5 h-5" />;
+      case 'Lock':
+        return <Lock className="w-5 h-5" />;
+      case 'Blocks':
+        return <Blocks className="w-5 h-5" />;
+      default:
+        return <Home className="w-5 h-5" />;
+    }
   };
 
   const handleHomeClick = (e: React.MouseEvent) => {
@@ -181,9 +189,7 @@ export const Sidebar = () => {
           <div className="space-y-1 px-2">
             {menuItems.filter(item => item.visible).map((item) => {
               const isActive = pathname === item.href;
-              const isHome = typeof item.icon === 'string' 
-                ? item.icon === 'Home'
-                : item.icon.type === Home;
+              const isHome = item.icon === 'Home';
               
               return (
                 <Link
@@ -200,7 +206,7 @@ export const Sidebar = () => {
                     }`}
                   >
                     <div className={`${isActive ? 'text-primary' : 'text-white/50'} transition-colors flex-shrink-0`}>
-                      {item.icon}
+                      {getIconComponent(item.icon)}
                     </div>
                     {isExpanded && (
                       <span className={`text-sm ${isActive ? 'font-medium' : ''}`}>
