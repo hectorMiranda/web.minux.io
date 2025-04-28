@@ -2,7 +2,7 @@
 
 import React, { useState, useRef } from 'react';
 import { JsonViewer } from './JsonViewer';
-import { Trash2, Database, Edit2, Save, X } from 'lucide-react';
+import { Trash2, Database } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface FileContentProps {

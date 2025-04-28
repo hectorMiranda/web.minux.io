@@ -7,5 +7,6 @@
       "destructuredArrayIgnorePattern": "^_"
     }],
     "@typescript-eslint/no-explicit-any": "warn"
-  }
+  },
+  "ignorePatterns": ["*.d.ts", "node_modules", ".next", "out"]
 } 
