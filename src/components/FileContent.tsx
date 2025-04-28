@@ -10,8 +10,10 @@ interface FileContentProps {
   content: string;
   size: string;
   onDelete?: (name: string) => void;
+  onUpdate?: (name: string, newContent: string) => void;
   position?: { x: number; y: number };
   sourcePosition?: { x: number; y: number };
+  onClose?: () => void;
 }
 
 export function FileContent({ 
@@ -19,8 +21,10 @@ export function FileContent({
   content, 
   size, 
   onDelete,
+  onUpdate,
   position,
-  sourcePosition 
+  sourcePosition,
+  onClose 
 }: FileContentProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [pos] = useState(position || { x: 0, y: 0 });
