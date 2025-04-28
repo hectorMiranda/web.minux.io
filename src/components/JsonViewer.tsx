@@ -35,7 +35,12 @@ export function JsonViewer({ content, onContentChange }: JsonViewerProps) {
         }
         
         // Handle regular objects
-        if (value?.$$typeof === Symbol.for('react.element')) {
+        // Check for React element using a type guard
+        if (value !== null && 
+            typeof value === 'object' && 
+            '$$typeof' in value && 
+            typeof value.$$typeof === 'symbol' && 
+            value.$$typeof === Symbol.for('react.element')) {
           return '[React Element]';
         }
         if (Array.isArray(value)) {
