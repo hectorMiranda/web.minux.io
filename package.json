@@ -30,6 +30,7 @@
     "tailwindcss-animate": "^1.0.7",
     "textlint": "^14.6.0",
     "three": "^0.175.0",
+    "webmidi": "^2.5.3",
     "zustand": "^5.0.3"
   },
   "devDependencies": {

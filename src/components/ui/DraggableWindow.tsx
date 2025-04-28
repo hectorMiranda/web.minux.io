@@ -1,123 +1,91 @@
 'use client';
 
-import { useState, useRef, ReactNode, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Minus, X, Maximize2, Minimize2 } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 
-interface DraggableWindowProps {
+export interface DraggableWindowProps {
+  children: React.ReactNode;
   title: string;
-  children: ReactNode;
-  defaultPosition?: { x: number; y: number };
-  onClose?: () => void;
-  onMinimize?: (position: { x: number; y: number }) => void;
-  type: 'settings' | 'debug' | 'keyboard';
+  defaultPosition: { x: number; y: number };
+  onClose: () => void;
+  type?: 'default' | 'settings';
 }
 
 export function DraggableWindow({ 
-  title, 
   children, 
-  defaultPosition = { x: 20, y: 20 },
+  title, 
+  defaultPosition, 
   onClose,
-  onMinimize,
-  type
+  type = 'default'
 }: DraggableWindowProps) {
-  const [isDragging, setIsDragging] = useState(false);
   const [position, setPosition] = useState(defaultPosition);
-  const [isMaximized, setIsMaximized] = useState(false);
-  const [bounds, setBounds] = useState({ left: 0, top: 0, right: 0, bottom: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const windowRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const updateBounds = () => {
-      if (typeof window !== 'undefined') {
-        setBounds({
-          left: 0,
-          top: 0,
-          right: window.innerWidth - (windowRef.current?.offsetWidth || 0),
-          bottom: window.innerHeight - (windowRef.current?.offsetHeight || 0)
+    const handleMouseMove = (e: MouseEvent) => {
+      if (isDragging) {
+        setPosition({
+          x: e.clientX - dragOffset.x,
+          y: e.clientY - dragOffset.y
         });
       }
     };
 
-    updateBounds();
-    window.addEventListener('resize', updateBounds);
-    return () => window.removeEventListener('resize', updateBounds);
-  }, []);
+    const handleMouseUp = () => {
+      setIsDragging(false);
+    };
 
-  const handleMinimize = () => {
-    if (onMinimize) {
-      onMinimize(position);
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging, dragOffset]);
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (windowRef.current) {
+      const rect = windowRef.current.getBoundingClientRect();
+      setDragOffset({
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top
+      });
+      setIsDragging(true);
     }
   };
 
   return (
-    <motion.div
+    <div
       ref={windowRef}
-      drag={!isMaximized}
-      dragMomentum={false}
-      dragElastic={0}
-      dragConstraints={bounds}
-      onDragStart={() => setIsDragging(true)}
-      onDragEnd={(e, info) => {
-        setIsDragging(false);
-        setPosition({ x: info.point.x, y: info.point.y });
-      }}
-      initial={position}
-      animate={isMaximized ? {
-        x: 0,
-        y: 0,
-        width: '100%',
-        height: '100%'
-      } : {
-        x: position.x,
-        y: position.y
-      }}
+      className="fixed bg-[#1e293b] border border-[#334155] rounded-lg shadow-lg"
       style={{
-        position: 'absolute',
-        zIndex: isDragging ? 50 : 10,
+        left: position.x,
+        top: position.y,
+        minWidth: '250px',
+        zIndex: 1000
       }}
-      className={`
-        bg-[#112240]/90 backdrop-blur-sm rounded-lg border border-white/10
-        ${isMaximized ? 'w-full h-full' : 'w-96'}
-      `}
     >
-      {/* Window Title Bar */}
       <div 
-        className="h-8 bg-[#1a2942] rounded-t-lg border-b border-white/10 flex items-center justify-between px-3 cursor-move"
+        className="flex items-center justify-between px-4 py-2 bg-[#334155] rounded-t-lg cursor-move"
+        onMouseDown={handleMouseDown}
       >
-        <span className="text-sm font-medium text-white/70">{title}</span>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleMinimize}
-            className="p-1 hover:bg-white/10 rounded"
-          >
-            <Minus className="w-3 h-3 text-white/70" />
-          </button>
-          <button
-            onClick={() => setIsMaximized(!isMaximized)}
-            className="p-1 hover:bg-white/10 rounded"
-          >
-            {isMaximized ? (
-              <Minimize2 className="w-3 h-3 text-white/70" />
-            ) : (
-              <Maximize2 className="w-3 h-3 text-white/70" />
-            )}
-          </button>
-          {onClose && (
-            <button
-              onClick={onClose}
-              className="p-1 hover:bg-red-500/20 rounded group"
-            >
-              <X className="w-3 h-3 text-white/70 group-hover:text-red-400" />
-            </button>
-          )}
-        </div>
+        <h3 className="text-white/90 font-medium">{title}</h3>
+        <button
+          onClick={onClose}
+          className="text-white/70 hover:text-white/90"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+          </svg>
+        </button>
       </div>
-
-      {/* Window Content */}
-      <div className="p-4">
+      <div className="text-white/90">
         {children}
       </div>
-    </motion.div>
+    </div>
   );
 } 
