@@ -2,7 +2,7 @@
 
 import React, { useState, useRef } from 'react';
 import { JsonViewer } from './JsonViewer';
-import { Trash2, Database } from 'lucide-react';
+import { Trash2, Database, X } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface FileContentProps {
@@ -39,6 +39,13 @@ export function FileContent({
       setIsMarquee(nameRef.current.scrollWidth > nameRef.current.clientWidth);
     }
   }, [name]);
+
+  // Add a handler for content updates
+  const handleContentUpdate = (newContent: string) => {
+    if (onUpdate) {
+      onUpdate(name, newContent);
+    }
+  };
 
   return (
     <motion.div
@@ -103,6 +110,14 @@ export function FileContent({
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {onClose && (
+              <button
+                onClick={onClose}
+                className="text-gray-400 hover:text-gray-300 transition-colors p-2 hover:bg-gray-400/10 rounded-lg"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
             {onDelete && (
               <button
                 onClick={() => onDelete(name)}
@@ -114,7 +129,10 @@ export function FileContent({
           </div>
         </div>
         <div className="p-4">
-          <JsonViewer content={content} />
+          <JsonViewer 
+            content={content} 
+            onContentChange={handleContentUpdate}
+          />
         </div>
       </motion.div>
     </motion.div>

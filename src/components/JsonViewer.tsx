@@ -6,9 +6,10 @@ import { Code, FileText } from 'lucide-react';
 
 interface JsonViewerProps {
   content: string;
+  onContentChange?: (newContent: string) => void;
 }
 
-export function JsonViewer({ content }: JsonViewerProps) {
+export function JsonViewer({ content, onContentChange }: JsonViewerProps) {
   const [isJsonView, setIsJsonView] = useState(true);
 
   const safeStringify = useCallback((value: unknown): string => {
@@ -104,6 +105,12 @@ export function JsonViewer({ content }: JsonViewerProps) {
 
   const { content: displayContent, type } = renderContent(content);
 
+  const handleContentEdit = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+    if (onContentChange) {
+      onContentChange(event.target.value);
+    }
+  };
+
   return (
     <div className="w-full">
       <div className="flex items-center justify-between mb-2">
@@ -139,9 +146,17 @@ export function JsonViewer({ content }: JsonViewerProps) {
         animate={{ opacity: 1 }}
         className="bg-black/30 rounded p-3 font-mono text-sm overflow-x-auto"
       >
-        <pre className="whitespace-pre-wrap break-all">
-          {typeof displayContent === 'function' ? '[Function]' : displayContent}
-        </pre>
+        {onContentChange ? (
+          <textarea
+            value={typeof displayContent === 'function' ? '[Function]' : displayContent}
+            onChange={handleContentEdit}
+            className="w-full bg-transparent border-none focus:outline-none resize-y min-h-[100px]"
+          />
+        ) : (
+          <pre className="whitespace-pre-wrap break-all">
+            {typeof displayContent === 'function' ? '[Function]' : displayContent}
+          </pre>
+        )}
       </motion.div>
     </div>
   );
