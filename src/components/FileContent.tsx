@@ -2,17 +2,15 @@
 
 import React, { useState, useRef } from 'react';
 import { JsonViewer } from './JsonViewer';
-import { Trash2, Database } from 'lucide-react';
-import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion';
+import { Trash2, Database, Edit2, Save, X } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 interface FileContentProps {
   name: string;
   content: string;
   size: string;
   onDelete?: (name: string) => void;
-  onUpdate?: (name: string, newContent: string) => void;
   position?: { x: number; y: number };
-  onClose?: () => void;
   sourcePosition?: { x: number; y: number };
 }
 
@@ -21,9 +19,7 @@ export function FileContent({
   content, 
   size, 
   onDelete,
-  onUpdate,
   position,
-  onClose,
   sourcePosition 
 }: FileContentProps) {
   const [isDragging, setIsDragging] = useState(false);
