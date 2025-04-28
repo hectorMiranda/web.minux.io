@@ -24,7 +24,7 @@ import { MinuxLogo } from '../MinuxLogo';
 import { useSettingsStore } from '@/lib/settings';
 
 interface MenuItem {
-  icon: string;
+  icon: string | React.ReactElement;
   label: string;
   href: string;
   description?: string;
@@ -130,9 +130,9 @@ export const Sidebar = () => {
     if (savedMenuItems.length > 0) {
       const itemsWithIcons = savedMenuItems.map((item: MenuItem) => ({
         ...item,
-        icon: getIconComponent(item.icon)
+        icon: typeof item.icon === 'string' ? getIconComponent(item.icon) : item.icon
       }));
-      setLocalMenuItems(itemsWithIcons);
+      setLocalMenuItems(itemsWithIcons as MenuItem[]);
     }
 
     // Redirect to home page if on root
@@ -181,7 +181,9 @@ export const Sidebar = () => {
           <div className="space-y-1 px-2">
             {menuItems.filter(item => item.visible).map((item) => {
               const isActive = pathname === item.href;
-              const isHome = item.icon.type === Home;
+              const isHome = typeof item.icon === 'string' 
+                ? item.icon === 'Home'
+                : item.icon.type === Home;
               
               return (
                 <Link
