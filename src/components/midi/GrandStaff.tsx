@@ -19,7 +19,7 @@ const LINE_SPACING = 0.2;
 export const GrandStaff: React.FC<GrandStaffProps> = ({ width, height, activeNotes }) => {
   const linesRef = useRef<THREE.Group>(null);
   const notesRef = useRef<THREE.Group>(null);
-  const backgroundRef = useRef<THREE.Mesh>(null);
+  
   useThree();
 
   useEffect(() => {
@@ -42,15 +42,8 @@ export const GrandStaff: React.FC<GrandStaffProps> = ({ width, height, activeNot
     background.position.z = -0.1;
     linesRef.current.add(background);
 
-    // Create staff lines material with increased width
-    const lineMaterial = new THREE.LineBasicMaterial({ 
-      color: STAFF_LINE_COLOR,
-      linewidth: 2 // Note: linewidth only works in WebGL 1
-    });
-
     // Draw treble staff lines with thicker geometry
     for (let i = 0; i < 5; i++) {
-      // Create a plane instead of a line for better visibility
       const geometry = new THREE.PlaneGeometry(width, 0.02);
       const material = new THREE.MeshBasicMaterial({ color: STAFF_LINE_COLOR });
       const line = new THREE.Mesh(geometry, material);

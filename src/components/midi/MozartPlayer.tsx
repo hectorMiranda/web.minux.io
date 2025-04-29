@@ -1,27 +1,9 @@
 'use client';
 
+import React from 'react';
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { Play, Pause, Music } from 'lucide-react';
+import { Play, Pause } from 'lucide-react';
 import { MozartSequencer } from './MozartSequencer';
-
-interface Note {
-  note: number;
-  duration: number; // in milliseconds
-}
-
-// Eine Kleine Nachtmusik main theme
-const MOZART_SEQUENCE: Note[] = [
-  // Eine Kleine Nachtmusik - First movement theme
-  { note: 67, duration: 300 }, // G4
-  { note: 67, duration: 300 }, // G4
-  { note: 67, duration: 300 }, // G4
-  { note: 67, duration: 300 }, // G4
-  { note: 74, duration: 600 }, // D5
-  { note: 72, duration: 600 }, // C5
-  { note: 71, duration: 300 }, // B4
-  { note: 69, duration: 300 }, // A4
-  { note: 67, duration: 600 }, // G4
-];
 
 interface MozartPlayerProps {
   selectedOutput: WebMidi.MIDIOutput | null;
@@ -37,7 +19,8 @@ export function MozartPlayer({ selectedOutput, onPlayNote, onStopNote }: MozartP
   useEffect(() => {
     if (selectedOutput) {
       sequencerRef.current = new MozartSequencer(
-        selectedOutput,
+        [], // Initial empty notes array
+        120, // Default tempo of 120 BPM
         onPlayNote,
         onStopNote
       );

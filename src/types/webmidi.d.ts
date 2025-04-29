@@ -8,7 +8,7 @@ declare namespace WebMidi {
 
   interface MIDIInputMap {
     size: number;
-    forEach(callbackfn: (value: MIDIInput, key: string, map: MIDIInputMap) => void, thisArg?: any): void;
+    forEach(callbackfn: (value: MIDIInput, key: string, map: MIDIInputMap) => void, thisArg?: unknown): void;
     get(key: string): MIDIInput | undefined;
     has(key: string): boolean;
     keys(): IterableIterator<string>;
@@ -19,7 +19,7 @@ declare namespace WebMidi {
 
   interface MIDIOutputMap {
     size: number;
-    forEach(callbackfn: (value: MIDIOutput, key: string, map: MIDIOutputMap) => void, thisArg?: any): void;
+    forEach(callbackfn: (value: MIDIOutput, key: string, map: MIDIOutputMap) => void, thisArg?: unknown): void;
     get(key: string): MIDIOutput | undefined;
     has(key: string): boolean;
     keys(): IterableIterator<string>;

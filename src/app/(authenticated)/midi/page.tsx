@@ -28,20 +28,7 @@ export default function MIDIPage() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [selectedPiece, setSelectedPiece] = useState<MozartPiece | null>(null);
-  const [windowWidth, setWindowWidth] = useState(0);
   const mozartSequencerRef = useRef<MozartSequencer | null>(null);
-
-  // Initialize window width on client side
-  useEffect(() => {
-    setWindowWidth(window.innerWidth);
-    
-    const handleResize = () => {
-      setWindowWidth(window.innerWidth);
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
 
   const addDebugMessage = useCallback((message: string, type: 'info' | 'error' | 'midi' = 'info') => {
     setDebugMessages(prev => [...prev, {
@@ -90,23 +77,24 @@ export default function MIDIPage() {
   useEffect(() => {
     if (selectedOutput) {
       mozartSequencerRef.current = new MozartSequencer(
-        selectedOutput,
+        [], // Initial empty notes array
+        120, // Default tempo of 120 BPM
         handleNoteOn,
         handleNoteOff
       );
       if (selectedPiece) {
-        mozartSequencerRef.current.setPiece(selectedPiece);
+        mozartSequencerRef.current.setNotes(selectedPiece.sequence);
       }
     } else {
       mozartSequencerRef.current = null;
     }
-  }, [selectedOutput, handleNoteOn, handleNoteOff]);
+  }, [selectedOutput, handleNoteOn, handleNoteOff, selectedPiece]);
 
   const handleSelectPiece = useCallback((piece: MozartPiece) => {
     setSelectedPiece(piece);
     addDebugMessage(`Selected piece: ${piece.title}`, 'info');
     if (mozartSequencerRef.current) {
-      mozartSequencerRef.current.setPiece(piece);
+      mozartSequencerRef.current.setNotes(piece.sequence);
       // Reset playback state when selecting a new piece
       setIsPlaying(false);
       setIsPaused(false);
@@ -252,7 +240,6 @@ export default function MIDIPage() {
             title="MIDI Settings"
             defaultPosition={{ x: 20, y: 60 }}
             onClose={() => setShowSettings(false)}
-            type="settings"
           >
             <MIDISettings
               midiAccess={midiAccess}
@@ -268,7 +255,6 @@ export default function MIDIPage() {
             title="Debug Console"
             defaultPosition={{ x: window.innerWidth - 420, y: 60 }}
             onClose={() => setShowDebug(false)}
-            type="default"
           >
             <DebugConsole messages={debugMessages} />
           </DraggableWindow>

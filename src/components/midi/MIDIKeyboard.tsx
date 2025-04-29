@@ -2,12 +2,11 @@
 
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import * as THREE from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
-// @ts-ignore
-import WebMidi, { Output } from 'webmidi';
+// @ts-expect-error - webmidi types are not fully compatible with our usage
+import { Output } from 'webmidi';
 import { DraggableWindow } from '../ui/DraggableWindow';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { OrbitControls as DreiOrbitControls, PerspectiveCamera, Text } from '@react-three/drei';
+import { Canvas } from '@react-three/fiber';
+import { OrbitControls as DreiOrbitControls, PerspectiveCamera } from '@react-three/drei';
 import { GrandStaff } from './GrandStaff';
 import gsap from 'gsap';
 
@@ -23,39 +22,9 @@ interface PianoSettings {
   highlightMiddleC: boolean;
 }
 
-interface NoteInfo {
-  midiNumber: number;
-  name: string;
-  label: string;
-  octave: number;
-  color: 'white' | 'black';
-}
-
-interface Note {
-  midiNumber: number;
-}
-
-interface ExtendedMesh extends THREE.Mesh {
-  userData: {
-    note: number;
-    originalY: number;
-    isBlack: boolean;
-    originalPosition: THREE.Vector3;
-    originalRotation: THREE.Euler;
-    isPressed: boolean;
-    label?: THREE.Mesh;
-    originalColor?: THREE.Color;
-    originalEmissive?: THREE.Color;
-  };
-}
-
-interface GrandStaffInstance extends THREE.Group {
-  updateNotes: (notes: number[]) => void;
-}
-
-interface GrandStaffConstructor {
-  new (options: { width: number; height: number; activeNotes: number[] }): GrandStaffInstance;
-}
+// Define which white keys have black keys after them (C, D, F, G, A)
+const HAS_BLACK_KEY = ['C', 'D', 'F', 'G', 'A'] as const;
+type WhiteKeyWithBlack = typeof HAS_BLACK_KEY[number];
 
 // Key dimensions
 const WHITE_KEY_WIDTH = 0.95;
@@ -67,11 +36,8 @@ const WHITE_KEY_LENGTH = 4.0;
 const BLACK_KEY_LENGTH = 2.8;
 const KEYBOARD_TILT = -Math.PI * 0.05;  // Common tilt for all keys
 
-// Define which white keys have black keys after them (C, D, F, G, A)
-const HAS_BLACK_KEY = ['C', 'D', 'F', 'G', 'A'];
-
 // Black key offsets from the left edge of their white key
-const BLACK_KEY_OFFSETS = {
+const BLACK_KEY_OFFSETS: Record<WhiteKeyWithBlack, number> = {
   'C': 0.7,  // C# position
   'D': 0.7,  // D# position
   'F': 0.7,  // F# position
@@ -131,46 +97,6 @@ const generatePianoKeys = () => {
 
 const PIANO_KEYS = generatePianoKeys();
 
-// Create base materials - moved outside component and made constant
-const BASE_MATERIALS = {
-  white: new THREE.MeshPhongMaterial({
-    color: 0xffffff,
-    emissive: 0x000000,
-    shininess: 80,
-    specular: 0x888888,
-    flatShading: false,
-    transparent: false,
-    opacity: 1
-  }),
-  black: new THREE.MeshPhongMaterial({
-    color: 0x000000,
-    emissive: 0x000000,
-    shininess: 90,
-    specular: 0x444444,
-    flatShading: false,
-    transparent: false,
-    opacity: 1
-  }),
-  whitePressed: new THREE.MeshPhongMaterial({
-    color: 0xdddddd,
-    emissive: 0x111111,
-    shininess: 80,
-    specular: 0x888888,
-    flatShading: false,
-    transparent: false,
-    opacity: 1
-  }),
-  blackPressed: new THREE.MeshPhongMaterial({
-    color: 0x333333,
-    emissive: 0x222222,
-    shininess: 90,
-    specular: 0x444444,
-    flatShading: false,
-    transparent: false,
-    opacity: 1
-  })
-};
-
 // Create a separate component for individual piano keys
 const PianoKey: React.FC<{
   note: number;
@@ -181,6 +107,7 @@ const PianoKey: React.FC<{
   onRelease: () => void;
   isMiddleC: boolean;
 }> = React.memo(({ note, isBlack, position, isPressed, onPress, onRelease, isMiddleC }) => {
+  console.log(`Rendering key ${note}`);
   const meshRef = useRef<THREE.Mesh>(null);
   
   const geometry = useMemo(() => new THREE.BoxGeometry(
@@ -275,12 +202,12 @@ const PianoKeys: React.FC<{
           isMiddleC={settings.highlightMiddleC && noteInfo.note === 60}
         />
       );
-    }), [pressedNotes, handleNoteOn, handleNoteOff, settings.highlightMiddleC]);
+    }), [pressedNotes, handleNoteOn, handleNoteOff, settings.highlightMiddleC, keyboardOffset]);
 
   // Create black keys
   const blackKeys = useMemo(() => 
     PIANO_KEYS.filter(key => key.color === 'white').map((whiteKey, index) => {
-      if (!HAS_BLACK_KEY.includes(whiteKey.label)) return null;
+      if (!HAS_BLACK_KEY.includes(whiteKey.label as WhiteKeyWithBlack)) return null;
 
       const blackKeyNote = PIANO_KEYS.find(
         k => k.color === 'black' && 
@@ -290,7 +217,9 @@ const PianoKeys: React.FC<{
       
       if (!blackKeyNote) return null;
 
-      const offset = BLACK_KEY_OFFSETS[whiteKey.label] || 0.7;
+      const offset = HAS_BLACK_KEY.includes(whiteKey.label as WhiteKeyWithBlack) 
+        ? BLACK_KEY_OFFSETS[whiteKey.label as WhiteKeyWithBlack] 
+        : 0.7;
       const position = new THREE.Vector3(
         keyboardOffset + (index * (WHITE_KEY_WIDTH + WHITE_KEY_SPACING)) + (WHITE_KEY_WIDTH * offset),
         BLACK_KEY_HEIGHT/2,
@@ -309,7 +238,7 @@ const PianoKeys: React.FC<{
           isMiddleC={false}
         />
       );
-    }).filter(Boolean), [pressedNotes, handleNoteOn, handleNoteOff]);
+    }).filter(Boolean), [pressedNotes, handleNoteOn, handleNoteOff, keyboardOffset]);
 
   return (
     <group>
@@ -320,7 +249,6 @@ const PianoKeys: React.FC<{
 };
 
 const MIDIKeyboard: React.FC<MIDIKeyboardProps> = ({ selectedOutput, onNoteOn, onNoteOff }) => {
-  const keysRef = useRef<ExtendedMesh[]>([]);
   const cameraRef = useRef<THREE.PerspectiveCamera>(null);
   const [activeNotes, setActiveNotes] = useState<number[]>([]);
   const [showSettings, setShowSettings] = useState(false);

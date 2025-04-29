@@ -1,7 +1,8 @@
 'use client';
 
+import React from 'react';
 import { Music, Play, Piano, Pause, Settings, Terminal, SkipBack } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { MOZART_PIECES, MozartPiece } from '../../data/mozartPieces';
 
 interface MIDIToolbarProps {

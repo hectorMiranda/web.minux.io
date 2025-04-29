@@ -1,50 +1,30 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Sliders, Terminal, Piano } from 'lucide-react';
+import React from 'react';
 
 interface MinimizedIconProps {
-  title: string;
-  type: 'settings' | 'debug' | 'keyboard';
+  icon: React.ReactNode;
+  onClick: () => void;
   position: { x: number; y: number };
-  onRestore: () => void;
+  title: string;
+  className?: string;
 }
 
-export function MinimizedIcon({ title, type, position, onRestore }: MinimizedIconProps) {
-  const [isDragging, setIsDragging] = useState(false);
-  const [pos, setPos] = useState(position);
-
-  const getIcon = () => {
-    switch (type) {
-      case 'settings':
-        return <Sliders className="w-6 h-6 text-[#00ff88]" />;
-      case 'debug':
-        return <Terminal className="w-6 h-6 text-[#00ff88]" />;
-      case 'keyboard':
-        return <Piano className="w-6 h-6 text-[#00ff88]" />;
-    }
-  };
-
+export const MinimizedIcon: React.FC<MinimizedIconProps> = ({
+  icon,
+  onClick,
+  title,
+  className = '',
+}) => {
   return (
     <div
-      className={`
-        absolute cursor-pointer group
-        ${isDragging ? 'z-50' : 'z-10'}
-      `}
-      style={{
-        left: pos.x,
-        top: pos.y,
-      }}
-      onDoubleClick={onRestore}
+      className={`flex items-center gap-2 px-3 py-2 bg-[#1e293b] border border-[#334155] rounded-lg cursor-pointer hover:bg-[#334155] ${className}`}
+      onClick={onClick}
     >
-      <div className="flex flex-col items-center gap-1">
-        <div className="w-16 h-16 bg-[#112240] rounded-lg border border-white/10 flex items-center justify-center hover:bg-[#1a2942] transition-colors">
-          {getIcon()}
-        </div>
-        <div className="text-xs text-white/70 text-center px-1 py-0.5 bg-[#112240]/80 rounded whitespace-nowrap">
-          {title}
-        </div>
-      </div>
+      {icon}
+      <span className="text-white/90">{title}</span>
     </div>
   );
-} 
+};
+
+export default MinimizedIcon; 
