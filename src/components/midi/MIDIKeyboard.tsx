@@ -38,6 +38,12 @@ interface ExtendedMesh extends THREE.Mesh {
   };
 }
 
+// Key dimensions
+const BLACK_KEY_HEIGHT = 0.5;
+const WHITE_KEY_HEIGHT = 0.25;
+const WHITE_KEY_LENGTH = 5.5;  // Slightly longer
+const BLACK_KEY_LENGTH = 3.5;  // Proportional black key length
+
 // Generate all 88 keys of a grand piano (A0 to C8)
 const generatePianoKeys = () => {
   const keys = [];
@@ -215,7 +221,7 @@ const MIDIKeyboard: React.FC<MIDIKeyboardProps> = ({ selectedOutput, onNoteOn, o
 
       if (cameraRef.current && sceneRef.current) {
         raycaster.setFromCamera(mouse, cameraRef.current);
-        const intersects = raycaster.intersectObjects(keysRef.current);
+        const intersects = raycaster.intersectObjects(keysRef.current, false);
 
         if (intersects.length > 0) {
           activeKey = intersects[0].object as ExtendedMesh;
@@ -262,22 +268,18 @@ const MIDIKeyboard: React.FC<MIDIKeyboardProps> = ({ selectedOutput, onNoteOn, o
     const whiteKeyWidth = 0.95;  // Slightly wider
     const whiteKeySpacing = 0.05;  // Very small spacing
     const blackKeyWidth = 0.6;  // Thinner black keys
-    const blackKeyHeight = 0.5;  // Shorter black keys
-    const whiteKeyHeight = 0.25;  // Thinner white keys
-    const whiteKeyLength = 5.5;  // Slightly longer
-    const blackKeyLength = 3.5;  // Proportional black key length
     const keyboardWidth = (52 * (whiteKeyWidth + whiteKeySpacing));
     const keyboardOffset = -keyboardWidth / 2;
 
     // Add a base for the piano
-    const baseGeometry = new THREE.BoxGeometry(keyboardWidth + 1, 0.5, whiteKeyLength + 1);
+    const baseGeometry = new THREE.BoxGeometry(keyboardWidth + 1, 0.5, WHITE_KEY_LENGTH + 1);
     const baseMaterial = new THREE.MeshPhongMaterial({ 
       color: 0x222222,
       shininess: 30
     });
     const base = new THREE.Mesh(baseGeometry, baseMaterial);
     base.position.y = -0.25;
-    base.position.z = whiteKeyLength/2 - 0.5;
+    base.position.z = WHITE_KEY_LENGTH/2 - 0.5;
     base.rotation.x = -Math.PI * 0.05;  // Slight tilt
     scene.add(base);
 
@@ -290,8 +292,8 @@ const MIDIKeyboard: React.FC<MIDIKeyboardProps> = ({ selectedOutput, onNoteOn, o
       const isBlack = noteInfo.color === 'black';
       const geometry = new THREE.BoxGeometry(
         isBlack ? blackKeyWidth : whiteKeyWidth,
-        isBlack ? blackKeyHeight : whiteKeyHeight,
-        isBlack ? blackKeyLength : whiteKeyLength
+        isBlack ? BLACK_KEY_HEIGHT : WHITE_KEY_HEIGHT,
+        isBlack ? BLACK_KEY_LENGTH : WHITE_KEY_LENGTH
       );
 
       const material = new THREE.MeshPhongMaterial({
@@ -305,7 +307,7 @@ const MIDIKeyboard: React.FC<MIDIKeyboardProps> = ({ selectedOutput, onNoteOn, o
       const baseMesh = new THREE.Mesh(geometry, material);
       const key = Object.assign(baseMesh, {
         userData: { note: noteInfo.note },
-        originalY: isBlack ? blackKeyHeight/2 : whiteKeyHeight/2
+        originalY: isBlack ? BLACK_KEY_HEIGHT/2 : WHITE_KEY_HEIGHT/2
       }) as ExtendedMesh;
 
       // Position calculation
@@ -325,11 +327,11 @@ const MIDIKeyboard: React.FC<MIDIKeyboardProps> = ({ selectedOutput, onNoteOn, o
           case 'A': offset = 0.25; break;
         }
         key.position.x = keyboardOffset + (whiteKeyIndex * (whiteKeyWidth + whiteKeySpacing)) + (whiteKeyWidth * offset);
-        key.position.y = blackKeyHeight/2;
-        key.position.z = -whiteKeyLength/3;
+        key.position.y = BLACK_KEY_HEIGHT/2;
+        key.position.z = -WHITE_KEY_LENGTH/3;
       } else {
         key.position.x = keyboardOffset + (whiteKeyIndex * (whiteKeyWidth + whiteKeySpacing));
-        key.position.y = whiteKeyHeight/2;
+        key.position.y = WHITE_KEY_HEIGHT/2;
         key.position.z = 0;
       }
 
@@ -410,16 +412,16 @@ const MIDIKeyboard: React.FC<MIDIKeyboardProps> = ({ selectedOutput, onNoteOn, o
     const key = keysRef.current.find((k) => (k as any).noteInfo.note === note.midiNumber);
     if (!key) return;
 
-    // Visual feedback - change material color
+    // Visual feedback - change material color and make it more visible
     const material = key.material as THREE.MeshPhongMaterial;
-    material.emissive = new THREE.Color(0x333333);
+    material.emissive = new THREE.Color(0x666666);  // Brighter emissive color
 
-    // Animate key press
+    // Animate key press - more pronounced movement
     const isBlack = (key as any).noteInfo.color === 'black';
-    key.position.y = isBlack ? 0.2 : -0.1;
+    key.position.y = isBlack ? 0.1 : -0.2;  // More movement
 
-    // Play MIDI note
-    selectedOutput.playNote(note.midiNumber, { velocity: 0.7 });
+    // Play MIDI note using standard MIDI message
+    selectedOutput.send([0x90, note.midiNumber, 100]);  // Note On, velocity 100
     onNoteOn(note.midiNumber);
   };
 
@@ -435,10 +437,10 @@ const MIDIKeyboard: React.FC<MIDIKeyboardProps> = ({ selectedOutput, onNoteOn, o
 
     // Reset key position
     const isBlack = (key as any).noteInfo.color === 'black';
-    key.position.y = isBlack ? 0.3 : 0;
+    key.position.y = isBlack ? BLACK_KEY_HEIGHT/2 : WHITE_KEY_HEIGHT/2;  // Reset to original height
 
-    // Stop MIDI note
-    selectedOutput.stopNote(note.midiNumber);
+    // Stop MIDI note using standard MIDI message
+    selectedOutput.send([0x80, note.midiNumber, 0]);  // Note Off
     onNoteOff(note.midiNumber);
   };
 
