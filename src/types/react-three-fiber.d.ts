@@ -38,6 +38,9 @@ declare module '@react-three/fiber' {
     clock: { elapsedTime: number; delta: number };
   }
 
+  type RenderCallback = (state: ThreeState, delta: number) => void;
+
   export const Canvas: React.FC<CanvasProps>;
   export const useThree: () => ThreeState;
+  export const useFrame: (callback: RenderCallback, renderPriority?: number) => void;
 } 
