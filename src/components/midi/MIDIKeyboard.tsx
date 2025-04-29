@@ -212,16 +212,22 @@ const MIDIKeyboard: React.FC<MIDIKeyboardProps> = ({ selectedOutput, onNoteOn, o
     let activeKey: ExtendedMesh | null = null;
 
     const handleMouseDown = (event: MouseEvent) => {
+      console.log('Mouse down event triggered');
       event.preventDefault();
       const rect = containerRef.current?.getBoundingClientRect();
-      if (!rect) return;
+      if (!rect) {
+        console.log('No container rect found');
+        return;
+      }
 
       mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
       mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+      console.log('Mouse coordinates:', { x: mouse.x, y: mouse.y });
 
       if (cameraRef.current && sceneRef.current) {
         raycaster.setFromCamera(mouse, cameraRef.current);
         const intersects = raycaster.intersectObjects(keysRef.current, false);
+        console.log('Intersections found:', intersects.length);
 
         if (intersects.length > 0) {
           activeKey = intersects[0].object as ExtendedMesh;
@@ -231,10 +237,13 @@ const MIDIKeyboard: React.FC<MIDIKeyboardProps> = ({ selectedOutput, onNoteOn, o
             playNote({ midiNumber: noteInfo.note });
           }
         }
+      } else {
+        console.log('Camera or scene not ready');
       }
     };
 
     const handleMouseUp = (event: MouseEvent) => {
+      console.log('Mouse up event triggered');
       event.preventDefault();
       if (activeKey) {
         const noteInfo = (activeKey as any).noteInfo;
@@ -246,9 +255,14 @@ const MIDIKeyboard: React.FC<MIDIKeyboardProps> = ({ selectedOutput, onNoteOn, o
       }
     };
 
-    renderer.domElement.addEventListener('mousedown', handleMouseDown);
-    renderer.domElement.addEventListener('mouseup', handleMouseUp);
-    document.addEventListener('mouseup', handleMouseUp); // Handle mouse up outside the canvas
+    // Make sure we're adding the event listeners to the renderer's DOM element
+    if (rendererRef.current) {
+      const canvas = rendererRef.current.domElement;
+      console.log('Adding mouse event listeners to canvas');
+      canvas.addEventListener('mousedown', handleMouseDown);
+      canvas.addEventListener('mouseup', handleMouseUp);
+      document.addEventListener('mouseup', handleMouseUp); // Handle mouse up outside the canvas
+    }
 
     // Controls setup
     const controls = new OrbitControls(camera, renderer.domElement);
@@ -387,6 +401,13 @@ const MIDIKeyboard: React.FC<MIDIKeyboardProps> = ({ selectedOutput, onNoteOn, o
 
     // Cleanup
     return () => {
+      console.log('Cleaning up event listeners');
+      if (rendererRef.current) {
+        const canvas = rendererRef.current.domElement;
+        canvas.removeEventListener('mousedown', handleMouseDown);
+        canvas.removeEventListener('mouseup', handleMouseUp);
+        document.removeEventListener('mouseup', handleMouseUp);
+      }
       window.removeEventListener('resize', handleResize);
       if (frameId) {
         cancelAnimationFrame(frameId);
@@ -395,9 +416,6 @@ const MIDIKeyboard: React.FC<MIDIKeyboardProps> = ({ selectedOutput, onNoteOn, o
         controlsRef.current.dispose();
       }
       if (rendererRef.current) {
-        renderer.domElement.removeEventListener('mousedown', handleMouseDown);
-        renderer.domElement.removeEventListener('mouseup', handleMouseUp);
-        document.removeEventListener('mouseup', handleMouseUp);
         rendererRef.current.dispose();
         if (containerRef.current) {
           containerRef.current.innerHTML = '';
@@ -407,41 +425,71 @@ const MIDIKeyboard: React.FC<MIDIKeyboardProps> = ({ selectedOutput, onNoteOn, o
   }, []);
 
   const playNote = (note: Note) => {
-    if (!selectedOutput) return;
+    console.log('playNote called with:', note);
+    if (!selectedOutput) {
+      console.log('No MIDI output selected');
+      return;
+    }
     
     const key = keysRef.current.find((k) => (k as any).noteInfo.note === note.midiNumber);
-    if (!key) return;
+    if (!key) {
+      console.log('No matching key found');
+      return;
+    }
+
+    console.log('Playing note:', note.midiNumber);
 
     // Visual feedback - change material color and make it more visible
     const material = key.material as THREE.MeshPhongMaterial;
     material.emissive = new THREE.Color(0x666666);  // Brighter emissive color
+    material.needsUpdate = true; // Make sure Three.js updates the material
 
     // Animate key press - more pronounced movement
     const isBlack = (key as any).noteInfo.color === 'black';
     key.position.y = isBlack ? 0.1 : -0.2;  // More movement
 
     // Play MIDI note using standard MIDI message
-    selectedOutput.send([0x90, note.midiNumber, 100]);  // Note On, velocity 100
-    onNoteOn(note.midiNumber);
+    try {
+      selectedOutput.send([0x90, note.midiNumber, 100]);  // Note On, velocity 100
+      console.log('MIDI Note On message sent');
+      onNoteOn(note.midiNumber);
+    } catch (error) {
+      console.error('Error sending MIDI message:', error);
+    }
   };
 
   const stopNote = (note: Note) => {
-    if (!selectedOutput) return;
+    console.log('stopNote called with:', note);
+    if (!selectedOutput) {
+      console.log('No MIDI output selected');
+      return;
+    }
     
     const key = keysRef.current.find((k) => (k as any).noteInfo.note === note.midiNumber);
-    if (!key) return;
+    if (!key) {
+      console.log('No matching key found');
+      return;
+    }
+
+    console.log('Stopping note:', note.midiNumber);
 
     // Reset material color
     const material = key.material as THREE.MeshPhongMaterial;
     material.emissive = new THREE.Color(0x000000);
+    material.needsUpdate = true; // Make sure Three.js updates the material
 
     // Reset key position
     const isBlack = (key as any).noteInfo.color === 'black';
-    key.position.y = isBlack ? BLACK_KEY_HEIGHT/2 : WHITE_KEY_HEIGHT/2;  // Reset to original height
+    key.position.y = isBlack ? BLACK_KEY_HEIGHT/2 : WHITE_KEY_HEIGHT/2;
 
     // Stop MIDI note using standard MIDI message
-    selectedOutput.send([0x80, note.midiNumber, 0]);  // Note Off
-    onNoteOff(note.midiNumber);
+    try {
+      selectedOutput.send([0x80, note.midiNumber, 0]);  // Note Off
+      console.log('MIDI Note Off message sent');
+      onNoteOff(note.midiNumber);
+    } catch (error) {
+      console.error('Error sending MIDI message:', error);
+    }
   };
 
   return (
