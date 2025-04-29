@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
-import { Save, ArrowLeft, Eye, EyeOff } from 'lucide-react';
+import { Save, ArrowLeft, Eye, EyeOff, ToggleRight, ToggleLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -16,6 +16,7 @@ interface MenuItem {
   href: string;
   description?: string;
   visible: boolean;
+  enabled: boolean;
 }
 
 const defaultMenuItems: MenuItem[] = [
@@ -25,6 +26,7 @@ const defaultMenuItems: MenuItem[] = [
     href: '/console',
     description: 'System terminal access',
     visible: true,
+    enabled: true,
   },
   {
     icon: 'Home',
@@ -32,6 +34,7 @@ const defaultMenuItems: MenuItem[] = [
     href: '/dashboard',
     description: 'System overview and status',
     visible: true,
+    enabled: true,
   },
   {
     icon: 'Cpu',
@@ -39,6 +42,7 @@ const defaultMenuItems: MenuItem[] = [
     href: '/system',
     description: 'CPU, memory, and processes',
     visible: true,
+    enabled: true,
   },
   {
     icon: 'Thermometer',
@@ -46,6 +50,7 @@ const defaultMenuItems: MenuItem[] = [
     href: '/sensors',
     description: 'Temperature and voltage monitoring',
     visible: true,
+    enabled: true,
   },
   {
     icon: 'Network',
@@ -53,6 +58,7 @@ const defaultMenuItems: MenuItem[] = [
     href: '/network',
     description: 'Network interfaces and statistics',
     visible: true,
+    enabled: true,
   },
   {
     icon: 'Wifi',
@@ -60,6 +66,7 @@ const defaultMenuItems: MenuItem[] = [
     href: '/wifi',
     description: 'Wireless network configuration',
     visible: true,
+    enabled: true,
   },
   {
     icon: 'HardDrive',
@@ -67,6 +74,7 @@ const defaultMenuItems: MenuItem[] = [
     href: '/storage',
     description: 'Disk usage and management',
     visible: true,
+    enabled: true,
   },
   {
     icon: 'Gauge',
@@ -74,6 +82,7 @@ const defaultMenuItems: MenuItem[] = [
     href: '/performance',
     description: 'System performance metrics',
     visible: true,
+    enabled: true,
   },
   {
     icon: 'Settings',
@@ -81,6 +90,7 @@ const defaultMenuItems: MenuItem[] = [
     href: '/settings',
     description: 'System configuration',
     visible: true,
+    enabled: true,
   },
   {
     icon: 'Power',
@@ -88,6 +98,7 @@ const defaultMenuItems: MenuItem[] = [
     href: '/power',
     description: 'Power management and control',
     visible: true,
+    enabled: true,
   },
   {
     icon: 'Lock',
@@ -95,6 +106,7 @@ const defaultMenuItems: MenuItem[] = [
     href: '/security',
     description: 'System security settings',
     visible: true,
+    enabled: true,
   },
   {
     icon: 'Blocks',
@@ -102,13 +114,15 @@ const defaultMenuItems: MenuItem[] = [
     href: '/blockchain',
     description: 'Blockchain-related operations',
     visible: true,
+    enabled: true,
   },
   {
     icon: 'Music',
     label: 'MIDI Controller',
     href: '/midi',
     description: 'Virtual MIDI keyboard and controller',
-    visible: true,
+    visible: false,
+    enabled: true,
   },
 ];
 
@@ -139,6 +153,15 @@ export default function SettingsPage() {
     items[index] = {
       ...items[index],
       visible: !items[index].visible
+    };
+    setLocalMenuItems(items);
+  };
+
+  const toggleEnabled = (index: number) => {
+    const items = [...localMenuItems];
+    items[index] = {
+      ...items[index],
+      enabled: !items[index].enabled
     };
     setLocalMenuItems(items);
   };
@@ -220,18 +243,34 @@ export default function SettingsPage() {
                                 </div>
                               )}
                             </div>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => toggleVisibility(index)}
-                              className="hover:bg-white/10"
-                            >
-                              {item.visible ? (
-                                <Eye className="h-4 w-4" />
-                              ) : (
-                                <EyeOff className="h-4 w-4" />
-                              )}
-                            </Button>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => toggleEnabled(index)}
+                                className="hover:bg-white/10"
+                                title={item.enabled ? "Enabled" : "Disabled"}
+                              >
+                                {item.enabled ? (
+                                  <ToggleRight className="h-4 w-4 text-green-400" />
+                                ) : (
+                                  <ToggleLeft className="h-4 w-4" />
+                                )}
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => toggleVisibility(index)}
+                                className="hover:bg-white/10"
+                                title={item.visible ? "Visible" : "Hidden"}
+                              >
+                                {item.visible ? (
+                                  <Eye className="h-4 w-4" />
+                                ) : (
+                                  <EyeOff className="h-4 w-4" />
+                                )}
+                              </Button>
+                            </div>
                           </div>
                         )}
                       </Draggable>

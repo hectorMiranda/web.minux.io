@@ -7,6 +7,7 @@ interface MenuItem {
   href: string;
   description?: string;
   visible: boolean;
+  enabled: boolean;
 }
 
 interface SettingsState {
@@ -19,7 +20,16 @@ interface SettingsState {
 export const useSettingsStore = create<SettingsState>()(
   persist(
     (set) => ({
-      menuItems: [],
+      menuItems: [
+        {
+          icon: 'Music',
+          label: 'MIDI Controller',
+          href: '/midi',
+          description: 'Virtual MIDI keyboard and controller',
+          visible: false,
+          enabled: true,
+        },
+      ],
       homePage: '/console',
       setMenuItems: (items) => set({ menuItems: items }),
       setHomePage: (page) => set({ homePage: page }),

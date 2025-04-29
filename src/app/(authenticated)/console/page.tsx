@@ -214,6 +214,16 @@ export default function ConsolePage() {
         setCommand('');
         router.push('/settings');
         return;
+      case 'midi':
+        response = ['Opening MIDI controller...', ''];
+        setHistory(prev => [
+          ...prev,
+          `pi@minux:~$ ${command}`,
+          ...response
+        ]);
+        setCommand('');
+        router.push('/midi');
+        return;
       default:
         response = [`Command not found: ${command}`, ''];
     }
