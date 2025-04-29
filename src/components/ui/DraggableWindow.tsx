@@ -9,6 +9,7 @@ interface DraggableWindowProps {
   onClose?: () => void;
   onMinimize?: (position: { x: number; y: number }) => void;
   className?: string;
+  type?: string;
 }
 
 export function DraggableWindow({
@@ -18,6 +19,7 @@ export function DraggableWindow({
   onClose,
   onMinimize,
   className = '',
+  type,
 }: DraggableWindowProps) {
   const [position, setPosition] = useState(defaultPosition);
   const [isDragging, setIsDragging] = useState(false);
@@ -76,6 +78,7 @@ export function DraggableWindow({
         minWidth: '250px',
         zIndex: 1000
       }}
+      data-window-type={type}
     >
       <div 
         className="flex items-center justify-between px-4 py-2 bg-[#334155] rounded-t-lg cursor-move"

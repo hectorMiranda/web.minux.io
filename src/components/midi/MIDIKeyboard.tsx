@@ -2,16 +2,29 @@
 
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import * as THREE from 'three';
-// @ts-expect-error - webmidi types are not fully compatible with our usage
-import { Output } from 'webmidi';
 import { DraggableWindow } from '../ui/DraggableWindow';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls as DreiOrbitControls, PerspectiveCamera } from '@react-three/drei';
 import { GrandStaff } from './GrandStaff';
 import gsap from 'gsap';
 
+interface MIDIOutput {
+  send: (data: number[]) => void;
+  name: string;
+  state: string;
+  connection: string;
+}
+
+interface WebMidiOutput {
+  playNote: (note: number, channel?: number, options?: { velocity?: number }) => void;
+  stopNote: (note: number) => void;
+  name: string;
+  state: string;
+  connection: string;
+}
+
 interface MIDIKeyboardProps {
-  selectedOutput: WebMidi.MIDIOutput | Output | null;
+  selectedOutput: MIDIOutput | WebMidiOutput | null;
   onNoteOn: (note: number) => void;
   onNoteOff: (note: number) => void;
 }
@@ -249,12 +262,12 @@ const PianoKeys: React.FC<{
 };
 
 // Type guard to check if the output is a WebMidi.MIDIOutput
-function isWebMIDIOutput(output: WebMidi.MIDIOutput | Output | null): output is WebMidi.MIDIOutput {
+function isWebMIDIOutput(output: MIDIOutput | WebMidiOutput | null): output is MIDIOutput {
   return output !== null && 'send' in output && !('playNote' in output);
 }
 
 // Type guard to check if the output is a webmidi.Output
-function isWebmidiOutput(output: WebMidi.MIDIOutput | Output | null): output is Output {
+function isWebmidiOutput(output: MIDIOutput | WebMidiOutput | null): output is WebMidiOutput {
   return output !== null && 'playNote' in output;
 }
 
@@ -316,7 +329,7 @@ const MIDIKeyboard: React.FC<MIDIKeyboardProps> = ({ selectedOutput, onNoteOn, o
         if (isWebMIDIOutput(selectedOutput)) {
           selectedOutput.send([0x90, note, 100]);
         } else if (isWebmidiOutput(selectedOutput)) {
-          selectedOutput.playNote(note, { rawVelocity: true });
+          selectedOutput.playNote(note, 1, { velocity: 100 });
         }
         console.log('MIDI Note On sent:', note);
         onNoteOn(note);
