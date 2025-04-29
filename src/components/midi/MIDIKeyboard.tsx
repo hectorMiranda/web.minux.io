@@ -11,7 +11,7 @@ import { GrandStaff } from './GrandStaff';
 import gsap from 'gsap';
 
 interface MIDIKeyboardProps {
-  selectedOutput: Output | null;
+  selectedOutput: WebMidi.MIDIOutput | Output | null;
   onNoteOn: (note: number) => void;
   onNoteOff: (note: number) => void;
 }
@@ -248,12 +248,21 @@ const PianoKeys: React.FC<{
   );
 };
 
+// Type guard to check if the output is a WebMidi.MIDIOutput
+function isWebMIDIOutput(output: WebMidi.MIDIOutput | Output | null): output is WebMidi.MIDIOutput {
+  return output !== null && 'send' in output && !('playNote' in output);
+}
+
+// Type guard to check if the output is a webmidi.Output
+function isWebmidiOutput(output: WebMidi.MIDIOutput | Output | null): output is Output {
+  return output !== null && 'playNote' in output;
+}
+
 const MIDIKeyboard: React.FC<MIDIKeyboardProps> = ({ selectedOutput, onNoteOn, onNoteOff }) => {
   const cameraRef = useRef<THREE.PerspectiveCamera>(null);
-  const [activeNotes, setActiveNotes] = useState<number[]>([]);
   const [showSettings, setShowSettings] = useState(false);
-  const [cameraPosition, setCameraPosition] = useState([0, 12, 20]);
-  const [cameraTarget, setCameraTarget] = useState([0, 0, 0]);
+  const [cameraPosition, setCameraPosition] = useState<[number, number, number]>([0, 12, 20]);
+  const [cameraTarget, setCameraTarget] = useState<[number, number, number]>([0, 0, 0]);
   const [settings, setSettings] = useState<PianoSettings>({
     showLabels: true,
     showOctaveNumbers: true,
@@ -262,10 +271,10 @@ const MIDIKeyboard: React.FC<MIDIKeyboardProps> = ({ selectedOutput, onNoteOn, o
 
   const handleViewChange = useCallback((view: 'default' | 'close' | 'top' | 'side') => {
     const positions = {
-      default: { pos: [0, 12, 20], target: [0, 0, 0] },     // Full piano view from opposite side
-      close: { pos: [0, 8, 20], target: [0, 0, 0] },        // Closer view from opposite side
-      top: { pos: [0, 20, 2], target: [0, 0, 0] },          // Top view from opposite side
-      side: { pos: [25, 8, 0], target: [0, 0, 0] }          // Side view adjusted
+      default: { pos: [0, 12, 20] as [number, number, number], target: [0, 0, 0] as [number, number, number] },
+      close: { pos: [0, 8, 20] as [number, number, number], target: [0, 0, 0] as [number, number, number] },
+      top: { pos: [0, 20, 2] as [number, number, number], target: [0, 0, 0] as [number, number, number] },
+      side: { pos: [25, 8, 0] as [number, number, number], target: [0, 0, 0] as [number, number, number] }
     };
 
     const { pos, target } = positions[view];
@@ -277,7 +286,7 @@ const MIDIKeyboard: React.FC<MIDIKeyboardProps> = ({ selectedOutput, onNoteOn, o
       duration: 1,
       ease: 'power2.inOut',
       onUpdate: () => {
-        setCameraPosition([...cameraPosition]);
+        setCameraPosition([...cameraPosition] as [number, number, number]);
       }
     });
 
@@ -288,7 +297,7 @@ const MIDIKeyboard: React.FC<MIDIKeyboardProps> = ({ selectedOutput, onNoteOn, o
       duration: 1,
       ease: 'power2.inOut',
       onUpdate: () => {
-        setCameraTarget([...cameraTarget]);
+        setCameraTarget([...cameraTarget] as [number, number, number]);
       }
     });
   }, [cameraPosition, cameraTarget]);
@@ -302,10 +311,13 @@ const MIDIKeyboard: React.FC<MIDIKeyboardProps> = ({ selectedOutput, onNoteOn, o
 
   const handleNoteOn = useCallback((note: number) => {
     console.log('Note On:', note);
-    setActiveNotes(prev => [...prev, note]);
     if (selectedOutput) {
       try {
-        selectedOutput.send([0x90, note, 100]);
+        if (isWebMIDIOutput(selectedOutput)) {
+          selectedOutput.send([0x90, note, 100]);
+        } else if (isWebmidiOutput(selectedOutput)) {
+          selectedOutput.playNote(note, { rawVelocity: true });
+        }
         console.log('MIDI Note On sent:', note);
         onNoteOn(note);
       } catch (error) {
@@ -318,10 +330,13 @@ const MIDIKeyboard: React.FC<MIDIKeyboardProps> = ({ selectedOutput, onNoteOn, o
 
   const handleNoteOff = useCallback((note: number) => {
     console.log('Note Off:', note);
-    setActiveNotes(prev => prev.filter(n => n !== note));
     if (selectedOutput) {
       try {
-        selectedOutput.send([0x80, note, 0]);
+        if (isWebMIDIOutput(selectedOutput)) {
+          selectedOutput.send([0x80, note, 0]);
+        } else if (isWebmidiOutput(selectedOutput)) {
+          selectedOutput.stopNote(note);
+        }
         console.log('MIDI Note Off sent:', note);
         onNoteOff(note);
       } catch (error) {
@@ -390,7 +405,7 @@ const MIDIKeyboard: React.FC<MIDIKeyboardProps> = ({ selectedOutput, onNoteOn, o
         />
         <group rotation={[0, 0, 0]} position={[0, -2, 0]}>
           <group position={[0, 6, -8]} rotation={[-Math.PI * 0.083, 0, 0]}>
-            <GrandStaff width={30} height={15} activeNotes={activeNotes} />
+            <GrandStaff width={30} height={15} activeNotes={[]} />
           </group>
           <group rotation={[KEYBOARD_TILT, 0, 0]}>
             <PianoKeys 
