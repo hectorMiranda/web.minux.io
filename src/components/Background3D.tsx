@@ -64,7 +64,7 @@ function Scene() {
   return (
     <>
       <ambientLight intensity={0.5} />
-      <pointLight position={[5, 5, 5]} intensity={1} color={0x00ff88} />
+      <pointLight position={[5, 5, 5] as [number, number, number]} intensity={1} color={0x00ff88} />
       {objects.current.map((object, index) => (
         <primitive key={index} object={object} />
       ))}
@@ -81,7 +81,7 @@ export function Background3D() {
       transition={{ duration: 1 }}
     >
       <Canvas
-        camera={{ position: [0, 0, 15], fov: 75 }}
+        camera={{ position: [0, 0, 15] as [number, number, number], fov: 75 }}
         style={{ background: 'transparent' }}
       >
         <Scene />

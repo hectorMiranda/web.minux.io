@@ -1,11 +1,19 @@
 declare module '@react-three/fiber' {
-  import { Camera, Scene, WebGLRenderer, WebGLRendererParameters } from 'three';
+  import { Camera, Scene, WebGLRenderer, WebGLRendererParameters, Vector3 } from 'three';
   import { ReactNode } from 'react';
+
+  interface CameraProps {
+    position?: Vector3 | [number, number, number];
+    fov?: number;
+    near?: number;
+    far?: number;
+    zoom?: number;
+  }
 
   interface CanvasProps {
     children?: ReactNode;
     gl?: Partial<WebGLRenderer> & Partial<WebGLRendererParameters>;
-    camera?: Partial<Camera>;
+    camera?: Partial<Camera> | CameraProps;
     scene?: Partial<Scene>;
     shadows?: boolean;
     dpr?: number | [number, number];
