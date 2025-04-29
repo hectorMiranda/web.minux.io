@@ -2,28 +2,14 @@
 
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
+import { Canvas, useFrame } from '@react-three/fiber';
 import { motion } from 'framer-motion';
 
-export function Background3D() {
-  const containerRef = useRef<HTMLDivElement>(null);
-
+function Scene() {
+  const objects = useRef<THREE.Mesh[]>([]);
+  
   useEffect(() => {
-    if (!containerRef.current) return;
-    
-    // Store the reference to avoid the warning
-    const container = containerRef.current;
-
-    // Scene setup
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
-    
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setClearColor(0x000000, 0);
-    container.appendChild(renderer.domElement);
-
     // Create geometric objects
-    const objects: THREE.Mesh[] = [];
     const geometries = [
       new THREE.BoxGeometry(1, 1, 1),
       new THREE.OctahedronGeometry(0.8),
@@ -37,11 +23,14 @@ export function Background3D() {
       opacity: 0.3
     });
 
-    // Add multiple objects in random positions
-    for (let i = 0; i < 15; i++) {
+    // Initialize objects array with 15 meshes
+    objects.current = Array(15).fill(null).map(() => {
       const geometry = geometries[Math.floor(Math.random() * geometries.length)];
-      const object = new THREE.Mesh(geometry, material.clone());
-      
+      return new THREE.Mesh(geometry, material.clone());
+    });
+
+    // Set initial positions and rotations
+    objects.current.forEach(object => {
       object.position.set(
         Math.random() * 20 - 10,
         Math.random() * 20 - 10,
@@ -53,64 +42,50 @@ export function Background3D() {
         Math.random() * Math.PI,
         Math.random() * Math.PI
       );
-      
-      objects.push(object);
-      scene.add(object);
-    }
-
-    // Add lights
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-    scene.add(ambientLight);
-
-    const pointLight = new THREE.PointLight(0x00ff88, 1);
-    pointLight.position.set(5, 5, 5);
-    scene.add(pointLight);
-
-    camera.position.z = 15;
-
-    // Animation
-    const animate = () => {
-      requestAnimationFrame(animate);
-
-      objects.forEach((obj, i) => {
-        obj.rotation.x += 0.001 + (i * 0.0002);
-        obj.rotation.y += 0.002 + (i * 0.0001);
-        
-        // Subtle floating motion
-        obj.position.y += Math.sin(Date.now() * 0.001 + i) * 0.002;
-      });
-
-      renderer.render(scene, camera);
-    };
-
-    // Handle resize
-    const handleResize = () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-    };
-
-    window.addEventListener('resize', handleResize);
-    animate();
+    });
 
     // Cleanup
     return () => {
-      window.removeEventListener('resize', handleResize);
-      container.removeChild(renderer.domElement);
-      objects.forEach(obj => {
+      objects.current.forEach(obj => {
         obj.geometry.dispose();
         (obj.material as THREE.Material).dispose();
       });
     };
   }, []);
 
+  useFrame(() => {
+    objects.current.forEach((obj, i) => {
+      obj.rotation.x += 0.001 + (i * 0.0002);
+      obj.rotation.y += 0.002 + (i * 0.0001);
+      obj.position.y += Math.sin(Date.now() * 0.001 + i) * 0.002;
+    });
+  });
+
+  return (
+    <>
+      <ambientLight intensity={0.5} />
+      <pointLight position={[5, 5, 5]} intensity={1} color={0x00ff88} />
+      {objects.current.map((object, index) => (
+        <primitive key={index} object={object} />
+      ))}
+    </>
+  );
+}
+
+export function Background3D() {
   return (
     <motion.div
-      ref={containerRef}
       className="fixed inset-0 -z-10"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 1 }}
-    />
+    >
+      <Canvas
+        camera={{ position: [0, 0, 15], fov: 75 }}
+        style={{ background: 'transparent' }}
+      >
+        <Scene />
+      </Canvas>
+    </motion.div>
   );
 } 

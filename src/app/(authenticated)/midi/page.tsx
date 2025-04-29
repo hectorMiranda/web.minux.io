@@ -5,10 +5,9 @@ import dynamic from 'next/dynamic';
 import { DraggableWindow } from '@/components/ui/DraggableWindow';
 import { DebugMessage } from '@/components/midi/types';
 import { MIDIToolbar } from '@/components/midi/MIDIToolbar';
-import { MozartPlayer } from '@/components/midi/MozartPlayer';
 import { MIDISettings } from '@/components/midi/MIDISettings';
 import { MozartSequencer } from '@/components/midi/MozartSequencer';
-import { Settings, Terminal } from 'lucide-react';
+import { MozartPiece } from '@/data/mozartPieces';
 
 // Dynamically import components that use browser APIs with ssr: false
 const MIDIKeyboard = dynamic(() => import('@/components/midi/MIDIKeyboard'), {
@@ -28,6 +27,7 @@ export default function MIDIPage() {
   const [showDebug, setShowDebug] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
+  const [selectedPiece, setSelectedPiece] = useState<MozartPiece | null>(null);
   const [windowWidth, setWindowWidth] = useState(0);
   const mozartSequencerRef = useRef<MozartSequencer | null>(null);
 
@@ -57,16 +57,32 @@ export default function MIDIPage() {
   }, [addDebugMessage]);
 
   const handleNoteOn = useCallback((note: number) => {
+    console.log('Sending Note On:', note, 'to output:', selectedOutput?.name);
     if (selectedOutput) {
-      selectedOutput.send([0x90, note, 0x7f]);
-      addDebugMessage(`Note On: ${note}`, 'midi');
+      try {
+        selectedOutput.send([0x90, note, 0x7f]);
+        addDebugMessage(`Note On: ${note}`, 'midi');
+      } catch (err) {
+        console.error('Failed to send Note On:', err);
+        addDebugMessage(`Failed to send Note On: ${err}`, 'error');
+      }
+    } else {
+      console.warn('No MIDI output selected for Note On');
     }
   }, [selectedOutput, addDebugMessage]);
 
   const handleNoteOff = useCallback((note: number) => {
+    console.log('Sending Note Off:', note, 'to output:', selectedOutput?.name);
     if (selectedOutput) {
-      selectedOutput.send([0x80, note, 0x00]);
-      addDebugMessage(`Note Off: ${note}`, 'midi');
+      try {
+        selectedOutput.send([0x80, note, 0x00]);
+        addDebugMessage(`Note Off: ${note}`, 'midi');
+      } catch (err) {
+        console.error('Failed to send Note Off:', err);
+        addDebugMessage(`Failed to send Note Off: ${err}`, 'error');
+      }
+    } else {
+      console.warn('No MIDI output selected for Note Off');
     }
   }, [selectedOutput, addDebugMessage]);
 
@@ -78,37 +94,55 @@ export default function MIDIPage() {
         handleNoteOn,
         handleNoteOff
       );
+      if (selectedPiece) {
+        mozartSequencerRef.current.setPiece(selectedPiece);
+      }
     } else {
       mozartSequencerRef.current = null;
     }
   }, [selectedOutput, handleNoteOn, handleNoteOff]);
 
-  const handlePlayMozart = useCallback(async () => {
-    if (!mozartSequencerRef.current || !selectedOutput) {
-      addDebugMessage('Cannot play Mozart: No MIDI output selected', 'error');
-      return;
-    }
-    
-    setIsPlaying(true);
-    setIsPaused(false);
-    addDebugMessage('Started playing Mozart sequence', 'info');
-    
-    try {
-      await mozartSequencerRef.current.play();
-    } catch (err) {
-      addDebugMessage(`Error playing Mozart: ${err}`, 'error');
-    } finally {
+  const handleSelectPiece = useCallback((piece: MozartPiece) => {
+    setSelectedPiece(piece);
+    addDebugMessage(`Selected piece: ${piece.title}`, 'info');
+    if (mozartSequencerRef.current) {
+      mozartSequencerRef.current.setPiece(piece);
+      // Reset playback state when selecting a new piece
       setIsPlaying(false);
       setIsPaused(false);
     }
-  }, [selectedOutput, addDebugMessage]);
+  }, [addDebugMessage]);
+
+  const handlePlayMozart = useCallback(async () => {
+    if (!mozartSequencerRef.current || !selectedOutput || !selectedPiece) {
+      addDebugMessage('Cannot play: No MIDI output or piece selected', 'error');
+      return;
+    }
+    
+    try {
+      setIsPlaying(true);
+      setIsPaused(false);
+      addDebugMessage(`Started playing: ${selectedPiece.title}`, 'info');
+      await mozartSequencerRef.current.play();
+      // Only reset states if the piece finished playing naturally
+      if (mozartSequencerRef.current.isCurrentlyPlaying()) {
+        setIsPlaying(false);
+        setIsPaused(false);
+      }
+    } catch (err) {
+      addDebugMessage(`Error playing piece: ${err}`, 'error');
+      setIsPlaying(false);
+      setIsPaused(false);
+    }
+  }, [selectedOutput, selectedPiece, addDebugMessage]);
 
   const handlePauseMozart = useCallback(() => {
     if (!mozartSequencerRef.current) return;
     
     mozartSequencerRef.current.pause();
     setIsPaused(true);
-    addDebugMessage('Paused Mozart sequence', 'info');
+    setIsPlaying(false);
+    addDebugMessage('Paused playback', 'info');
   }, [addDebugMessage]);
 
   const handleResumeMozart = useCallback(() => {
@@ -116,7 +150,8 @@ export default function MIDIPage() {
     
     mozartSequencerRef.current.resume();
     setIsPaused(false);
-    addDebugMessage('Resumed Mozart sequence', 'info');
+    setIsPlaying(true);
+    addDebugMessage('Resumed playback', 'info');
   }, [addDebugMessage]);
 
   const handleStopMozart = useCallback(() => {
@@ -125,7 +160,7 @@ export default function MIDIPage() {
     mozartSequencerRef.current.stop();
     setIsPlaying(false);
     setIsPaused(false);
-    addDebugMessage('Stopped Mozart sequence', 'info');
+    addDebugMessage('Stopped playback', 'info');
   }, [addDebugMessage]);
 
   const initializeMIDI = useCallback(async () => {
@@ -135,11 +170,21 @@ export default function MIDIPage() {
         setMidiAccess(access);
         addDebugMessage('MIDI access granted', 'info');
 
+        // Log available outputs
+        const outputs = Array.from(access.outputs.values());
+        console.log('Available MIDI outputs:', outputs);
+        outputs.forEach(output => {
+          console.log(`Output: ${output.name}, ID: ${output.id}, State: ${output.state}, Connection: ${output.connection}`);
+        });
+
         // Auto-select the first available output if none is selected
         if (!selectedOutput) {
-          const outputs = Array.from(access.outputs.values());
           if (outputs.length > 0) {
+            console.log('Auto-selecting first output:', outputs[0].name);
             handleOutputSelect(outputs[0]);
+          } else {
+            console.warn('No MIDI outputs available');
+            addDebugMessage('No MIDI outputs found', 'error');
           }
         }
       } else {
@@ -147,6 +192,7 @@ export default function MIDIPage() {
         addDebugMessage('Web MIDI API not supported', 'error');
       }
     } catch (err) {
+      console.error('MIDI initialization error:', err);
       setError('Failed to access MIDI devices');
       addDebugMessage(`MIDI access error: ${err}`, 'error');
     }
@@ -166,6 +212,8 @@ export default function MIDIPage() {
         onPauseMozart={handlePauseMozart}
         onResumeMozart={handleResumeMozart}
         onStopMozart={handleStopMozart}
+        onSelectPiece={handleSelectPiece}
+        selectedPiece={selectedPiece}
         isPlaying={isPlaying}
         isPaused={isPaused}
         selectedOutput={selectedOutput}
@@ -215,16 +263,14 @@ export default function MIDIPage() {
           </DraggableWindow>
         )}
 
-        {showDebug && windowWidth > 0 && (
+        {showDebug && (
           <DraggableWindow
             title="Debug Console"
-            defaultPosition={{ x: Math.max(20, windowWidth - 420), y: 60 }}
+            defaultPosition={{ x: window.innerWidth - 420, y: 60 }}
             onClose={() => setShowDebug(false)}
-            type="debug"
+            type="default"
           >
-            <div className="h-64">
-              <DebugConsole messages={debugMessages} />
-            </div>
+            <DebugConsole messages={debugMessages} />
           </DraggableWindow>
         )}
       </div>

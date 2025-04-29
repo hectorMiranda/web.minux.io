@@ -1,3 +1,5 @@
+import { MozartPiece, MozartNote } from '../../data/mozartPieces';
+
 interface Note {
   note: number;
   duration: number; // in milliseconds
@@ -61,6 +63,7 @@ export class MozartSequencer {
   private currentNote: number | null = null;
   private startTime: number = 0;
   private pauseTime: number = 0;
+  private currentPiece: MozartPiece | null = null;
 
   constructor(
     output: WebMidi.MIDIOutput,
@@ -72,105 +75,128 @@ export class MozartSequencer {
     this.onNoteOff = onNoteOff;
   }
 
-  async play() {
-    if (this.isPlaying) return;
-    
-    this.isPlaying = true;
+  setPiece(piece: MozartPiece) {
+    this.currentPiece = piece;
+    this.reset();
+  }
+
+  private reset() {
+    this.currentNoteIndex = 0;
+    this.isPlaying = false;
     this.isPaused = false;
-    this.startTime = Date.now() - this.pauseTime;
-    
-    // If we're resuming from a pause, continue from the current note
-    if (this.currentNoteIndex > 0) {
-      await this.playFromIndex(this.currentNoteIndex);
-    } else {
-      // Start from the beginning
-      this.currentNoteIndex = 0;
-      await this.playFromIndex(0);
+    this.startTime = 0;
+    this.pauseTime = 0;
+    if (this.currentNote !== null) {
+      this.output.send([0x80, this.currentNote, 0]);
+      this.onNoteOff(this.currentNote);
+      this.currentNote = null;
     }
   }
 
-  private async playFromIndex(startIndex: number) {
-    this.currentNoteIndex = startIndex;
+  async play() {
+    if (!this.currentPiece) return;
     
-    for (let i = startIndex; i < MOZART_SEQUENCE.length; i++) {
-      if (!this.isPlaying) break;
-      
-      // If paused, stop the current note and wait
-      if (this.isPaused) {
-        if (this.currentNote !== null) {
-          this.output.send([0x80, this.currentNote, 0x00]); // Note Off
-          this.onNoteOff(this.currentNote);
-          this.currentNote = null;
-        }
-        this.pauseTime = Date.now() - this.startTime;
-        return;
-      }
-      
-      const { note, duration } = MOZART_SEQUENCE[i];
-      this.currentNote = note;
-      this.currentNoteIndex = i;
-      
-      // Play note
-      this.output.send([0x90, note, 0x7f]); // Note On
-      this.onNoteOn(note);
-
-      // Wait for duration
-      await new Promise<void>((resolve) => {
-        this.currentTimeout = setTimeout(() => {
-          // Stop note
-          this.output.send([0x80, note, 0x00]); // Note Off
-          this.onNoteOff(note);
-          this.currentNote = null;
-          resolve();
-        }, duration);
-      });
-
-      // Small gap between notes
-      await new Promise(resolve => setTimeout(resolve, 50));
+    if (this.isPaused) {
+      this.resume();
+      return;
     }
 
-    // If we've reached the end and we're still playing (not paused), loop back to the beginning
-    if (this.isPlaying && !this.isPaused) {
-      this.currentNoteIndex = 0;
-      await this.playFromIndex(0);
-    } else {
+    this.reset();
+    this.isPlaying = true;
+    this.startTime = performance.now();
+
+    await this.playNextNote();
+  }
+
+  private async playNextNote() {
+    if (!this.isPlaying || !this.currentPiece) return;
+
+    const sequence = this.currentPiece.sequence;
+    if (this.currentNoteIndex >= sequence.length) {
       this.isPlaying = false;
+      return;
     }
+
+    const note = sequence[this.currentNoteIndex];
+    
+    // Stop previous note if any
+    if (this.currentNote !== null) {
+      this.output.send([0x80, this.currentNote, 0]);
+      this.onNoteOff(this.currentNote);
+    }
+
+    // Play current note
+    this.currentNote = note.note;
+    this.output.send([0x90, note.note, 100]);
+    this.onNoteOn(note.note);
+
+    // Schedule next note
+    this.currentTimeout = setTimeout(async () => {
+      if (this.isPlaying) {  // Only proceed if still playing
+        this.currentNoteIndex++;
+        await this.playNextNote();
+      }
+    }, note.duration);
   }
 
   pause() {
-    if (!this.isPlaying || this.isPaused) return;
+    if (!this.isPlaying) return;
     
     this.isPaused = true;
+    this.isPlaying = false;
+    this.pauseTime = performance.now();
+    
     if (this.currentTimeout) {
       clearTimeout(this.currentTimeout);
       this.currentTimeout = null;
     }
+
+    if (this.currentNote !== null) {
+      this.output.send([0x80, this.currentNote, 0]);
+      this.onNoteOff(this.currentNote);
+      this.currentNote = null;
+    }
   }
 
   resume() {
-    if (!this.isPlaying || !this.isPaused) return;
+    if (!this.isPaused || !this.currentPiece) return;
     
     this.isPaused = false;
-    this.playFromIndex(this.currentNoteIndex);
+    this.isPlaying = true;
+    
+    // Calculate the elapsed time since pause
+    const elapsedTime = performance.now() - this.pauseTime;
+    
+    // Adjust the start time to account for the pause duration
+    this.startTime += elapsedTime;
+    
+    // Continue playing from where we left off
+    this.playNextNote();
   }
 
   stop() {
     this.isPlaying = false;
     this.isPaused = false;
-    this.currentNoteIndex = 0;
-    this.pauseTime = 0;
     
     if (this.currentTimeout) {
       clearTimeout(this.currentTimeout);
       this.currentTimeout = null;
     }
-    
-    // Make sure to stop any currently playing note
+
     if (this.currentNote !== null) {
-      this.output.send([0x80, this.currentNote, 0x00]); // Note Off
+      this.output.send([0x80, this.currentNote, 0]);
       this.onNoteOff(this.currentNote);
       this.currentNote = null;
     }
+
+    this.reset();
+  }
+
+  isCurrentlyPlaying() {
+    return this.isPlaying;
+  }
+
+  isCurrentlyPaused() {
+    return this.isPaused;
   }
 } 

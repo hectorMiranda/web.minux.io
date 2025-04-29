@@ -1,7 +1,8 @@
 'use client';
 
 import { Music, Play, Piano, Pause, Settings, Terminal, SkipBack } from 'lucide-react';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { MOZART_PIECES, MozartPiece } from '../../data/mozartPieces';
 
 interface MIDIToolbarProps {
   onPlayNote: (note: number) => void;
@@ -9,6 +10,8 @@ interface MIDIToolbarProps {
   onPauseMozart: () => void;
   onResumeMozart: () => void;
   onStopMozart: () => void;
+  onSelectPiece: (piece: MozartPiece) => void;
+  selectedPiece: MozartPiece | null;
   isPlaying: boolean;
   isPaused: boolean;
   selectedOutput: WebMidi.MIDIOutput | null;
@@ -24,7 +27,9 @@ export function MIDIToolbar({
   onPlayMozart, 
   onPauseMozart,
   onResumeMozart,
-  onStopMozart, 
+  onStopMozart,
+  onSelectPiece,
+  selectedPiece,
   isPlaying,
   isPaused,
   selectedOutput,
@@ -50,6 +55,13 @@ export function MIDIToolbar({
       }
     }
   }, [midiAccess, selectedOutput, onOutputSelect]);
+
+  // Auto-select first piece if none selected
+  useEffect(() => {
+    if (!selectedPiece && MOZART_PIECES.length > 0) {
+      onSelectPiece(MOZART_PIECES[0]);
+    }
+  }, [selectedPiece, onSelectPiece]);
 
   return (
     <div className="fixed top-0 left-0 right-0 h-12 bg-[#2D2D2D] border-b border-white/10 flex items-center justify-between px-4 z-50">
@@ -132,7 +144,21 @@ export function MIDIToolbar({
         {/* Mozart Player */}
         <div className="flex items-center gap-2">
           <Music className="w-5 h-5 text-[#00ff88]" />
-          <span className="text-sm font-medium">Mozart - Eine Kleine Nachtmusik</span>
+          <select
+            className="bg-[#1e3a8a] text-white px-3 py-1 rounded-md border border-white/10 text-sm min-w-[200px]"
+            onChange={(e) => {
+              const piece = MOZART_PIECES.find(p => p.id === e.target.value);
+              if (piece) onSelectPiece(piece);
+            }}
+            value={selectedPiece?.id || ''}
+            disabled={isPlaying || isPaused}
+          >
+            {MOZART_PIECES.map((piece) => (
+              <option key={piece.id} value={piece.id}>
+                {piece.title}
+              </option>
+            ))}
+          </select>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -148,13 +174,13 @@ export function MIDIToolbar({
           </button>
           <button
             onClick={isPaused ? onResumeMozart : (isPlaying ? onPauseMozart : onPlayMozart)}
-            disabled={!selectedOutput}
+            disabled={!selectedOutput || !selectedPiece}
             className={`
               px-4 py-1.5 rounded-full flex items-center gap-2 transition-all
               ${isPlaying && !isPaused
                 ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30' 
                 : 'bg-[#00ff88]/10 text-[#00ff88] hover:bg-[#00ff88]/20'}
-              ${!selectedOutput && 'opacity-50 cursor-not-allowed'}
+              ${(!selectedOutput || !selectedPiece) && 'opacity-50 cursor-not-allowed'}
               hover:scale-105 disabled:hover:scale-100
             `}
           >

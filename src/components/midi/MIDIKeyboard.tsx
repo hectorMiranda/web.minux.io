@@ -1,11 +1,15 @@
 'use client';
 
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 // @ts-ignore
 import WebMidi, { Output } from 'webmidi';
 import { DraggableWindow } from '../ui/DraggableWindow';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { OrbitControls as DreiOrbitControls, PerspectiveCamera, Text } from '@react-three/drei';
+import { GrandStaff } from './GrandStaff';
+import gsap from 'gsap';
 
 interface MIDIKeyboardProps {
   selectedOutput: Output | null;
@@ -32,17 +36,48 @@ interface Note {
 }
 
 interface ExtendedMesh extends THREE.Mesh {
-  originalY?: number;
   userData: {
     note: number;
+    originalY: number;
+    isBlack: boolean;
+    originalPosition: THREE.Vector3;
+    originalRotation: THREE.Euler;
+    isPressed: boolean;
+    label?: THREE.Mesh;
+    originalColor?: THREE.Color;
+    originalEmissive?: THREE.Color;
   };
 }
 
+interface GrandStaffInstance extends THREE.Group {
+  updateNotes: (notes: number[]) => void;
+}
+
+interface GrandStaffConstructor {
+  new (options: { width: number; height: number; activeNotes: number[] }): GrandStaffInstance;
+}
+
 // Key dimensions
-const BLACK_KEY_HEIGHT = 0.5;
+const WHITE_KEY_WIDTH = 0.95;
+const WHITE_KEY_SPACING = 0.05;
+const BLACK_KEY_WIDTH = 0.55;
 const WHITE_KEY_HEIGHT = 0.25;
-const WHITE_KEY_LENGTH = 5.5;  // Slightly longer
-const BLACK_KEY_LENGTH = 3.5;  // Proportional black key length
+const BLACK_KEY_HEIGHT = 0.45;
+const WHITE_KEY_LENGTH = 4.0;
+const BLACK_KEY_LENGTH = 2.8;
+const KEYBOARD_TILT = -Math.PI * 0.05;  // Common tilt for all keys
+
+// Define which white keys have black keys after them (C, D, F, G, A)
+const HAS_BLACK_KEY = ['C', 'D', 'F', 'G', 'A'];
+
+// Black key offsets from the left edge of their white key
+const BLACK_KEY_OFFSETS = {
+  'C': 0.7,  // C# position
+  'D': 0.7,  // D# position
+  'F': 0.7,  // F# position
+  'G': 0.7,  // G# position
+  'A': 0.7   // A# position
+};
 
 // Generate all 88 keys of a grand piano (A0 to C8)
 const generatePianoKeys = () => {
@@ -51,37 +86,42 @@ const generatePianoKeys = () => {
   const blackKeys = ['C#', 'D#', 'F#', 'G#', 'A#'];
   
   // Start from A0 (MIDI note 21)
-  let noteNumber = 21;
+  let midiNote = 21;  // A0
+  let totalKeys = 0;  // Counter to ensure we generate exactly 88 keys
   
-  // Generate keys for all octaves
+  // Generate keys for all octaves (A0 to C8)
   for (let octave = 0; octave <= 8; octave++) {
-    const startNote = octave === 0 ? 5 : 0; // Start from A for octave 0
-    const endNote = octave === 8 ? 0 : 7; // End at C for octave 8
+    // For octave 0, start from A
+    // For octave 8, only go up to C
+    const startNote = octave === 0 ? 5 : 0;  // 5 is the index of 'A' in noteNames
+    const endNote = octave === 8 ? 2 : 7;    // 2 is the index of 'C' in noteNames + 1
     
-    for (let i = startNote; i < endNote; i++) {
-      const noteName = noteNames[i % 7];
-      const fullNoteName = `${noteName}${octave}`;
+    for (let i = startNote; i < endNote && totalKeys < 88; i++) {
+      const noteIndex = i % 7;
+      const noteName = noteNames[noteIndex];
       
       // Add white key
       keys.push({
-        note: noteNumber,
-        name: fullNoteName,
+        note: midiNote,
+        name: `${noteName}${octave}`,
         color: 'white',
         label: noteName,
         octave: octave
       });
-      noteNumber++;
+      totalKeys++;
+      midiNote++;
       
       // Add black key if applicable
-      if (blackKeys.includes(noteName + '#')) {
+      if (blackKeys.includes(noteName + '#') && totalKeys < 88) {
         keys.push({
-          note: noteNumber,
+          note: midiNote,
           name: `${noteName}#${octave}`,
           color: 'black',
           label: `${noteName}#`,
           octave: octave
         });
-        noteNumber++;
+        totalKeys++;
+        midiNote++;
       }
     }
   }
@@ -91,419 +131,391 @@ const generatePianoKeys = () => {
 
 const PIANO_KEYS = generatePianoKeys();
 
+// Create base materials - moved outside component and made constant
+const BASE_MATERIALS = {
+  white: new THREE.MeshPhongMaterial({
+    color: 0xffffff,
+    emissive: 0x000000,
+    shininess: 80,
+    specular: 0x888888,
+    flatShading: false,
+    transparent: false,
+    opacity: 1
+  }),
+  black: new THREE.MeshPhongMaterial({
+    color: 0x000000,
+    emissive: 0x000000,
+    shininess: 90,
+    specular: 0x444444,
+    flatShading: false,
+    transparent: false,
+    opacity: 1
+  }),
+  whitePressed: new THREE.MeshPhongMaterial({
+    color: 0xdddddd,
+    emissive: 0x111111,
+    shininess: 80,
+    specular: 0x888888,
+    flatShading: false,
+    transparent: false,
+    opacity: 1
+  }),
+  blackPressed: new THREE.MeshPhongMaterial({
+    color: 0x333333,
+    emissive: 0x222222,
+    shininess: 90,
+    specular: 0x444444,
+    flatShading: false,
+    transparent: false,
+    opacity: 1
+  })
+};
+
+// Create a separate component for individual piano keys
+const PianoKey: React.FC<{
+  note: number;
+  isBlack: boolean;
+  position: THREE.Vector3;
+  isPressed: boolean;
+  onPress: () => void;
+  onRelease: () => void;
+  isMiddleC: boolean;
+}> = React.memo(({ note, isBlack, position, isPressed, onPress, onRelease, isMiddleC }) => {
+  const meshRef = useRef<THREE.Mesh>(null);
+  
+  const geometry = useMemo(() => new THREE.BoxGeometry(
+    isBlack ? BLACK_KEY_WIDTH : WHITE_KEY_WIDTH,
+    isBlack ? BLACK_KEY_HEIGHT : WHITE_KEY_HEIGHT,
+    isBlack ? BLACK_KEY_LENGTH : WHITE_KEY_LENGTH
+  ), [isBlack]);
+
+  const material = useMemo(() => {
+    const mat = new THREE.MeshPhongMaterial({
+      color: isBlack ? 0x000000 : 0xffffff,
+      emissive: isMiddleC ? 0x2244ff : 0x000000,
+      emissiveIntensity: isMiddleC ? 0.3 : 0,
+      shininess: isBlack ? 90 : 80,
+      specular: isBlack ? 0x444444 : 0x888888,
+      flatShading: false
+    });
+    return mat;
+  }, [isBlack, isMiddleC]);
+
+  useEffect(() => {
+    if (meshRef.current) {
+      if (isPressed) {
+        meshRef.current.position.y = position.y - (isBlack ? 0.15 : 0.1);
+        material.emissive.setHex(isBlack ? 0x222222 : 0x111111);
+        material.color.setHex(isBlack ? 0x333333 : 0xdddddd);
+      } else {
+        meshRef.current.position.y = position.y;
+        material.emissive.setHex(isMiddleC ? 0x2244ff : 0x000000);
+        material.color.setHex(isBlack ? 0x000000 : 0xffffff);
+      }
+    }
+  }, [isPressed, position.y, material, isBlack, isMiddleC]);
+
+  return (
+    <mesh
+      ref={meshRef}
+      geometry={geometry}
+      material={material}
+      position={position}
+      rotation={[KEYBOARD_TILT, 0, 0]}
+      onPointerDown={onPress}
+      onPointerUp={onRelease}
+      onPointerLeave={onRelease}
+    />
+  );
+});
+
+PianoKey.displayName = 'PianoKey';
+
+const PianoKeys: React.FC<{
+  onNoteOn: (note: number) => void;
+  onNoteOff: (note: number) => void;
+  settings: PianoSettings;
+}> = ({ onNoteOn, onNoteOff, settings }) => {
+  const [pressedNotes, setPressedNotes] = useState<Set<number>>(new Set());
+  const keyboardWidth = (52 * (WHITE_KEY_WIDTH + WHITE_KEY_SPACING));
+  const keyboardOffset = -keyboardWidth / 2;
+
+  const handleNoteOn = useCallback((note: number) => {
+    setPressedNotes(prev => new Set(prev).add(note));
+    onNoteOn(note);
+  }, [onNoteOn]);
+
+  const handleNoteOff = useCallback((note: number) => {
+    setPressedNotes(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(note);
+      return newSet;
+    });
+    onNoteOff(note);
+  }, [onNoteOff]);
+
+  // Create white keys
+  const whiteKeys = useMemo(() => 
+    PIANO_KEYS.filter(key => key.color === 'white').map((noteInfo, index) => {
+      const position = new THREE.Vector3(
+        keyboardOffset + (index * (WHITE_KEY_WIDTH + WHITE_KEY_SPACING)),
+        0,
+        0
+      );
+
+      return (
+        <PianoKey
+          key={noteInfo.note}
+          note={noteInfo.note}
+          isBlack={false}
+          position={position}
+          isPressed={pressedNotes.has(noteInfo.note)}
+          onPress={() => handleNoteOn(noteInfo.note)}
+          onRelease={() => handleNoteOff(noteInfo.note)}
+          isMiddleC={settings.highlightMiddleC && noteInfo.note === 60}
+        />
+      );
+    }), [pressedNotes, handleNoteOn, handleNoteOff, settings.highlightMiddleC]);
+
+  // Create black keys
+  const blackKeys = useMemo(() => 
+    PIANO_KEYS.filter(key => key.color === 'white').map((whiteKey, index) => {
+      if (!HAS_BLACK_KEY.includes(whiteKey.label)) return null;
+
+      const blackKeyNote = PIANO_KEYS.find(
+        k => k.color === 'black' && 
+            k.octave === whiteKey.octave && 
+            k.label === `${whiteKey.label}#`
+      );
+      
+      if (!blackKeyNote) return null;
+
+      const offset = BLACK_KEY_OFFSETS[whiteKey.label] || 0.7;
+      const position = new THREE.Vector3(
+        keyboardOffset + (index * (WHITE_KEY_WIDTH + WHITE_KEY_SPACING)) + (WHITE_KEY_WIDTH * offset),
+        BLACK_KEY_HEIGHT/2,
+        -BLACK_KEY_LENGTH/3
+      );
+
+      return (
+        <PianoKey
+          key={blackKeyNote.note}
+          note={blackKeyNote.note}
+          isBlack={true}
+          position={position}
+          isPressed={pressedNotes.has(blackKeyNote.note)}
+          onPress={() => handleNoteOn(blackKeyNote.note)}
+          onRelease={() => handleNoteOff(blackKeyNote.note)}
+          isMiddleC={false}
+        />
+      );
+    }).filter(Boolean), [pressedNotes, handleNoteOn, handleNoteOff]);
+
+  return (
+    <group>
+      {whiteKeys}
+      {blackKeys}
+    </group>
+  );
+};
+
 const MIDIKeyboard: React.FC<MIDIKeyboardProps> = ({ selectedOutput, onNoteOn, onNoteOff }) => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
-  const sceneRef = useRef<THREE.Scene | null>(null);
-  const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
-  const controlsRef = useRef<OrbitControls | null>(null);
   const keysRef = useRef<ExtendedMesh[]>([]);
-  const labelsRef = useRef<THREE.Sprite[]>([]);
-  const [activeNotes, setActiveNotes] = useState<Set<number>>(new Set());
+  const cameraRef = useRef<THREE.PerspectiveCamera>(null);
+  const [activeNotes, setActiveNotes] = useState<number[]>([]);
   const [showSettings, setShowSettings] = useState(false);
+  const [cameraPosition, setCameraPosition] = useState([0, 12, 20]);
+  const [cameraTarget, setCameraTarget] = useState([0, 0, 0]);
   const [settings, setSettings] = useState<PianoSettings>({
     showLabels: true,
     showOctaveNumbers: true,
     highlightMiddleC: true
   });
 
-  const createTextSprite = (text: string, color: string = 'white') => {
-    const canvas = document.createElement('canvas');
-    const context = canvas.getContext('2d');
-    if (!context) return null;
-    
-    canvas.width = 256;  // Larger canvas for sharper text
-    canvas.height = 128;
-    
-    context.fillStyle = 'transparent';
-    context.fillRect(0, 0, canvas.width, canvas.height);
-    
-    context.font = 'bold 48px Arial';  // Larger font
-    context.fillStyle = color;
-    context.textAlign = 'center';
-    context.textBaseline = 'middle';
-    context.fillText(text, canvas.width/2, canvas.height/2);
-    
-    const texture = new THREE.CanvasTexture(canvas);
-    texture.minFilter = THREE.LinearFilter;
-    texture.magFilter = THREE.LinearFilter;
-    const spriteMaterial = new THREE.SpriteMaterial({ 
-      map: texture,
-      transparent: true
-    });
-    const sprite = new THREE.Sprite(spriteMaterial);
-    sprite.scale.set(1.5, 0.75, 1);  // Larger sprites
-    return sprite;
-  };
+  const handleViewChange = useCallback((view: 'default' | 'close' | 'top' | 'side') => {
+    const positions = {
+      default: { pos: [0, 12, 20], target: [0, 0, 0] },     // Full piano view from opposite side
+      close: { pos: [0, 8, 20], target: [0, 0, 0] },        // Closer view from opposite side
+      top: { pos: [0, 20, 2], target: [0, 0, 0] },          // Top view from opposite side
+      side: { pos: [25, 8, 0], target: [0, 0, 0] }          // Side view adjusted
+    };
 
-  const updateLabels = useCallback(() => {
-    labelsRef.current.forEach(label => {
-      if (label.parent) label.parent.remove(label);
-    });
-    labelsRef.current = [];
-
-    if (!settings.showLabels || !sceneRef.current) return;
-
-    keysRef.current.forEach((key) => {
-      const noteInfo = (key as any).noteInfo;
-      if (noteInfo.color === 'white') {
-        const labelText = settings.showOctaveNumbers 
-          ? `${noteInfo.label}${noteInfo.octave}` 
-          : noteInfo.label;
-        
-        const labelColor = (noteInfo.name === 'C4' && settings.highlightMiddleC) 
-          ? '#ff4444' 
-          : '#ffffff';
-
-        const label = createTextSprite(labelText, labelColor);
-        if (label && sceneRef.current) {
-          label.position.copy(key.position);
-          label.position.z += 4.5;  // Fixed offset for label position
-          label.position.y += 0.3;
-          sceneRef.current.add(label);
-          labelsRef.current.push(label);
-        }
+    const { pos, target } = positions[view];
+    
+    gsap.to(cameraPosition, {
+      0: pos[0],
+      1: pos[1],
+      2: pos[2],
+      duration: 1,
+      ease: 'power2.inOut',
+      onUpdate: () => {
+        setCameraPosition([...cameraPosition]);
       }
     });
-  }, [settings]);
 
+    gsap.to(cameraTarget, {
+      0: target[0],
+      1: target[1],
+      2: target[2],
+      duration: 1,
+      ease: 'power2.inOut',
+      onUpdate: () => {
+        setCameraTarget([...cameraTarget]);
+      }
+    });
+  }, [cameraPosition, cameraTarget]);
+
+  // Add logging for selectedOutput changes
   useEffect(() => {
-    console.log('Settings changed:', settings);
-    updateLabels();
-  }, [settings, updateLabels]);
+    console.log('Selected MIDI Output:', selectedOutput?.name);
+    console.log('MIDI Output state:', selectedOutput?.state);
+    console.log('MIDI Output connection:', selectedOutput?.connection);
+  }, [selectedOutput]);
 
-  useEffect(() => {
-    if (!containerRef.current) return;
-
-    // Clear any existing content
-    while (containerRef.current.firstChild) {
-      containerRef.current.removeChild(containerRef.current.firstChild);
+  const handleNoteOn = useCallback((note: number) => {
+    console.log('Note On:', note);
+    setActiveNotes(prev => [...prev, note]);
+    if (selectedOutput) {
+      try {
+        selectedOutput.send([0x90, note, 100]);
+        console.log('MIDI Note On sent:', note);
+        onNoteOn(note);
+      } catch (error) {
+        console.error('Failed to send MIDI Note On:', error);
+      }
+    } else {
+      console.warn('No MIDI output selected');
     }
+  }, [selectedOutput, onNoteOn]);
 
-    // Scene setup
-    const scene = new THREE.Scene();
-    sceneRef.current = scene;
-    scene.background = new THREE.Color(0x1a1a1a);
-
-    // Camera setup
-    const camera = new THREE.PerspectiveCamera(
-      45,
-      containerRef.current.clientWidth / containerRef.current.clientHeight,
-      0.1,
-      1000
-    );
-    cameraRef.current = camera;
-    camera.position.set(0, 12, 30);
-    camera.lookAt(0, -2, 0);
-
-    // Renderer setup
-    const renderer = new THREE.WebGLRenderer({ 
-      antialias: true,
-      alpha: true,
-      preserveDrawingBuffer: false
-    });
-    rendererRef.current = renderer;
-    renderer.setSize(containerRef.current.clientWidth, containerRef.current.clientHeight);
-    containerRef.current.appendChild(renderer.domElement);
-
-    // Add click event handling
-    const raycaster = new THREE.Raycaster();
-    const mouse = new THREE.Vector2();
-    let activeKey: ExtendedMesh | null = null;
-
-    const handleMouseDown = (event: MouseEvent) => {
-      console.log('Mouse down event triggered');
-      event.preventDefault();
-      const rect = containerRef.current?.getBoundingClientRect();
-      if (!rect) {
-        console.log('No container rect found');
-        return;
+  const handleNoteOff = useCallback((note: number) => {
+    console.log('Note Off:', note);
+    setActiveNotes(prev => prev.filter(n => n !== note));
+    if (selectedOutput) {
+      try {
+        selectedOutput.send([0x80, note, 0]);
+        console.log('MIDI Note Off sent:', note);
+        onNoteOff(note);
+      } catch (error) {
+        console.error('Failed to send MIDI Note Off:', error);
       }
-
-      mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-      mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-      console.log('Mouse coordinates:', { x: mouse.x, y: mouse.y });
-
-      if (cameraRef.current && sceneRef.current) {
-        raycaster.setFromCamera(mouse, cameraRef.current);
-        const intersects = raycaster.intersectObjects(keysRef.current, false);
-        console.log('Intersections found:', intersects.length);
-
-        if (intersects.length > 0) {
-          activeKey = intersects[0].object as ExtendedMesh;
-          const noteInfo = (activeKey as any).noteInfo;
-          if (noteInfo) {
-            console.log('Key pressed:', noteInfo);
-            playNote({ midiNumber: noteInfo.note });
-          }
-        }
-      } else {
-        console.log('Camera or scene not ready');
-      }
-    };
-
-    const handleMouseUp = (event: MouseEvent) => {
-      console.log('Mouse up event triggered');
-      event.preventDefault();
-      if (activeKey) {
-        const noteInfo = (activeKey as any).noteInfo;
-        if (noteInfo) {
-          console.log('Key released:', noteInfo);
-          stopNote({ midiNumber: noteInfo.note });
-        }
-        activeKey = null;
-      }
-    };
-
-    // Make sure we're adding the event listeners to the renderer's DOM element
-    if (rendererRef.current) {
-      const canvas = rendererRef.current.domElement;
-      console.log('Adding mouse event listeners to canvas');
-      canvas.addEventListener('mousedown', handleMouseDown);
-      canvas.addEventListener('mouseup', handleMouseUp);
-      document.addEventListener('mouseup', handleMouseUp); // Handle mouse up outside the canvas
+    } else {
+      console.warn('No MIDI output selected');
     }
+  }, [selectedOutput, onNoteOff]);
 
-    // Controls setup
-    const controls = new OrbitControls(camera, renderer.domElement);
-    controlsRef.current = controls;
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.05;
-    controls.enableZoom = true;
-    controls.enablePan = true;
-    controls.minDistance = 20;
-    controls.maxDistance = 40;
-    controls.minPolarAngle = Math.PI / 4;  // Limit minimum angle
-    controls.maxPolarAngle = Math.PI / 2;  // Limit maximum angle
-    controls.target.set(0, -2, 0);
-
-    // Create piano keys
-    keysRef.current = [];
-    const whiteKeyWidth = 0.95;  // Slightly wider
-    const whiteKeySpacing = 0.05;  // Very small spacing
-    const blackKeyWidth = 0.6;  // Thinner black keys
-    const keyboardWidth = (52 * (whiteKeyWidth + whiteKeySpacing));
-    const keyboardOffset = -keyboardWidth / 2;
-
-    // Add a base for the piano
-    const baseGeometry = new THREE.BoxGeometry(keyboardWidth + 1, 0.5, WHITE_KEY_LENGTH + 1);
-    const baseMaterial = new THREE.MeshPhongMaterial({ 
-      color: 0x222222,
-      shininess: 30
-    });
-    const base = new THREE.Mesh(baseGeometry, baseMaterial);
-    base.position.y = -0.25;
-    base.position.z = WHITE_KEY_LENGTH/2 - 0.5;
-    base.rotation.x = -Math.PI * 0.05;  // Slight tilt
-    scene.add(base);
-
-    // Create a group for all piano keys
-    const keyGroup = new THREE.Group();
-    keyGroup.rotation.x = -Math.PI * 0.05;  // Same tilt as base
-    scene.add(keyGroup);
-
-    PIANO_KEYS.forEach((noteInfo, index) => {
-      const isBlack = noteInfo.color === 'black';
-      const geometry = new THREE.BoxGeometry(
-        isBlack ? blackKeyWidth : whiteKeyWidth,
-        isBlack ? BLACK_KEY_HEIGHT : WHITE_KEY_HEIGHT,
-        isBlack ? BLACK_KEY_LENGTH : WHITE_KEY_LENGTH
-      );
-
-      const material = new THREE.MeshPhongMaterial({
-        color: isBlack ? 0x111111 : 0xeeeeee,
-        emissive: 0x000000,
-        shininess: 40,
-        flatShading: false
-      });
-
-      // Create mesh with proper typing
-      const baseMesh = new THREE.Mesh(geometry, material);
-      const key = Object.assign(baseMesh, {
-        userData: { note: noteInfo.note },
-        originalY: isBlack ? BLACK_KEY_HEIGHT/2 : WHITE_KEY_HEIGHT/2
-      }) as ExtendedMesh;
-
-      // Position calculation
-      const whiteKeyIndex = PIANO_KEYS.filter(
-        (k, i) => i < index && k.color === 'white'
-      ).length;
-
-      if (isBlack) {
-        // Calculate black key position based on the note name
-        const noteName = noteInfo.name.charAt(0);
-        let offset = 0;
-        switch(noteName) {
-          case 'C': offset = -0.25; break;
-          case 'D': offset = 0.25; break;
-          case 'F': offset = -0.25; break;
-          case 'G': offset = 0; break;
-          case 'A': offset = 0.25; break;
-        }
-        key.position.x = keyboardOffset + (whiteKeyIndex * (whiteKeyWidth + whiteKeySpacing)) + (whiteKeyWidth * offset);
-        key.position.y = BLACK_KEY_HEIGHT/2;
-        key.position.z = -WHITE_KEY_LENGTH/3;
-      } else {
-        key.position.x = keyboardOffset + (whiteKeyIndex * (whiteKeyWidth + whiteKeySpacing));
-        key.position.y = WHITE_KEY_HEIGHT/2;
-        key.position.z = 0;
-      }
-
-      (key as any).noteInfo = noteInfo;
-      keyGroup.add(key);
-      keysRef.current.push(key);
-    });
-
-    // Add lighting
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
-    scene.add(ambientLight);
-
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    directionalLight.position.set(0, 10, 15);
-    scene.add(directionalLight);
-
-    // Add a point light for better key visibility
-    const pointLight = new THREE.PointLight(0xffffff, 0.4);
-    pointLight.position.set(0, 15, 10);
-    scene.add(pointLight);
-
-    // Add initial labels
-    updateLabels();
-
-    // Animation loop
-    const animate = () => {
-      if (!sceneRef.current || !cameraRef.current || !rendererRef.current || !controlsRef.current) {
-        return requestAnimationFrame(animate);
-      }
-
-      const frameId = requestAnimationFrame(animate);
-      controlsRef.current.update();
-      rendererRef.current.render(sceneRef.current, cameraRef.current);
-      return frameId;
-    };
-
-    // Start animation
-    const frameId = animate();
-
-    // Window resize handler
-    const handleResize = () => {
-      if (!containerRef.current || !cameraRef.current || !rendererRef.current) return;
-
-      const width = containerRef.current.clientWidth;
-      const height = containerRef.current.clientHeight;
-
-      cameraRef.current.aspect = width / height;
-      cameraRef.current.updateProjectionMatrix();
-      rendererRef.current.setSize(width, height);
-    };
-
-    window.addEventListener('resize', handleResize);
-
-    // Cleanup
-    return () => {
-      console.log('Cleaning up event listeners');
-      if (rendererRef.current) {
-        const canvas = rendererRef.current.domElement;
-        canvas.removeEventListener('mousedown', handleMouseDown);
-        canvas.removeEventListener('mouseup', handleMouseUp);
-        document.removeEventListener('mouseup', handleMouseUp);
-      }
-      window.removeEventListener('resize', handleResize);
-      if (frameId) {
-        cancelAnimationFrame(frameId);
-      }
-      if (controlsRef.current) {
-        controlsRef.current.dispose();
-      }
-      if (rendererRef.current) {
-        rendererRef.current.dispose();
-        if (containerRef.current) {
-          containerRef.current.innerHTML = '';
-        }
-      }
-    };
+  const handleSettingChange = useCallback((setting: keyof PianoSettings, value: boolean) => {
+    setSettings(prev => ({
+      ...prev,
+      [setting]: value
+    }));
   }, []);
-
-  const playNote = (note: Note) => {
-    console.log('playNote called with:', note);
-    if (!selectedOutput) {
-      console.log('No MIDI output selected');
-      return;
-    }
-    
-    const key = keysRef.current.find((k) => (k as any).noteInfo.note === note.midiNumber);
-    if (!key) {
-      console.log('No matching key found');
-      return;
-    }
-
-    console.log('Playing note:', note.midiNumber);
-
-    // Visual feedback - change material color and make it more visible
-    const material = key.material as THREE.MeshPhongMaterial;
-    material.emissive = new THREE.Color(0x666666);  // Brighter emissive color
-    material.needsUpdate = true; // Make sure Three.js updates the material
-
-    // Animate key press - more pronounced movement
-    const isBlack = (key as any).noteInfo.color === 'black';
-    key.position.y = isBlack ? 0.1 : -0.2;  // More movement
-
-    // Play MIDI note using standard MIDI message
-    try {
-      selectedOutput.send([0x90, note.midiNumber, 100]);  // Note On, velocity 100
-      console.log('MIDI Note On message sent');
-      onNoteOn(note.midiNumber);
-    } catch (error) {
-      console.error('Error sending MIDI message:', error);
-    }
-  };
-
-  const stopNote = (note: Note) => {
-    console.log('stopNote called with:', note);
-    if (!selectedOutput) {
-      console.log('No MIDI output selected');
-      return;
-    }
-    
-    const key = keysRef.current.find((k) => (k as any).noteInfo.note === note.midiNumber);
-    if (!key) {
-      console.log('No matching key found');
-      return;
-    }
-
-    console.log('Stopping note:', note.midiNumber);
-
-    // Reset material color
-    const material = key.material as THREE.MeshPhongMaterial;
-    material.emissive = new THREE.Color(0x000000);
-    material.needsUpdate = true; // Make sure Three.js updates the material
-
-    // Reset key position
-    const isBlack = (key as any).noteInfo.color === 'black';
-    key.position.y = isBlack ? BLACK_KEY_HEIGHT/2 : WHITE_KEY_HEIGHT/2;
-
-    // Stop MIDI note using standard MIDI message
-    try {
-      selectedOutput.send([0x80, note.midiNumber, 0]);  // Note Off
-      console.log('MIDI Note Off message sent');
-      onNoteOff(note.midiNumber);
-    } catch (error) {
-      console.error('Error sending MIDI message:', error);
-    }
-  };
 
   return (
     <div className="relative w-full h-full">
-      <div 
-        ref={containerRef} 
-        className="w-full h-full"
-      />
+      <Canvas
+        gl={{
+          antialias: true,
+          alpha: false,
+          preserveDrawingBuffer: true,
+          powerPreference: "high-performance"
+        }}
+        dpr={[1, 2]}
+        shadows
+      >
+        <color attach="background" args={[0x1a1a1a]} />
+        <PerspectiveCamera
+          ref={cameraRef}
+          makeDefault
+          position={cameraPosition}
+          fov={60}
+          near={0.1}
+          far={1000}
+        />
+        <ambientLight intensity={0.6} />
+        <directionalLight 
+          position={[10, 10, 10]} 
+          intensity={1.0}
+          castShadow
+        />
+        <pointLight 
+          position={[0, 10, 5]} 
+          intensity={0.8}
+        />
+        <spotLight
+          position={[0, 15, 0]}
+          angle={0.6}
+          penumbra={0.8}
+          intensity={1.0}
+          castShadow
+        />
+        <DreiOrbitControls 
+          enableDamping
+          dampingFactor={0.05}
+          enableZoom
+          enablePan
+          minDistance={6}
+          maxDistance={30}
+          minPolarAngle={Math.PI / 6}
+          maxPolarAngle={Math.PI / 2}
+          target={cameraTarget}
+        />
+        <group rotation={[0, 0, 0]} position={[0, -2, 0]}>
+          <group position={[0, 6, -8]} rotation={[-Math.PI * 0.083, 0, 0]}>
+            <GrandStaff width={30} height={15} activeNotes={activeNotes} />
+          </group>
+          <group rotation={[KEYBOARD_TILT, 0, 0]}>
+            <PianoKeys 
+              onNoteOn={handleNoteOn}
+              onNoteOff={handleNoteOff}
+              settings={settings}
+            />
+          </group>
+        </group>
+      </Canvas>
       {!selectedOutput && (
         <div className="absolute top-4 left-4 bg-red-900/20 text-red-400 px-4 py-2 rounded-lg">
           Please select a MIDI output device
         </div>
       )}
       <div className="absolute top-4 right-4 flex gap-2">
+        <button
+          onClick={() => handleViewChange('close')}
+          className="bg-[#1e3a8a]/50 hover:bg-[#1e3a8a]/70 text-white/70 px-4 py-2 rounded-lg text-sm flex items-center gap-2"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+            <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+            <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+          </svg>
+          Close
+        </button>
+        <button
+          onClick={() => handleViewChange('top')}
+          className="bg-[#1e3a8a]/50 hover:bg-[#1e3a8a]/70 text-white/70 px-4 py-2 rounded-lg text-sm flex items-center gap-2"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+          </svg>
+          Top
+        </button>
+        <button
+          onClick={() => handleViewChange('side')}
+          className="bg-[#1e3a8a]/50 hover:bg-[#1e3a8a]/70 text-white/70 px-4 py-2 rounded-lg text-sm flex items-center gap-2"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+          </svg>
+          Side
+        </button>
+        <button
+          onClick={() => handleViewChange('default')}
+          className="bg-[#1e3a8a]/50 hover:bg-[#1e3a8a]/70 text-white/70 px-4 py-2 rounded-lg text-sm flex items-center gap-2"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd" />
+          </svg>
+          Reset
+        </button>
         <button
           onClick={() => setShowSettings(!showSettings)}
           className="bg-[#1e3a8a]/50 hover:bg-[#1e3a8a]/70 text-white/70 px-4 py-2 rounded-lg text-sm flex items-center gap-2"
@@ -521,47 +533,38 @@ const MIDIKeyboard: React.FC<MIDIKeyboardProps> = ({ selectedOutput, onNoteOn, o
           onClose={() => setShowSettings(false)}
         >
           <div className="p-4 space-y-4">
-            <label className="flex items-center space-x-2">
+            <label className="flex items-center space-x-2 cursor-pointer">
               <input
                 type="checkbox"
                 checked={settings.showLabels}
-                onChange={(e) => {
-                  console.log('Changing showLabels to:', e.target.checked);
-                  setSettings(prev => ({...prev, showLabels: e.target.checked}));
-                }}
-                className="form-checkbox"
+                onChange={(e) => handleSettingChange('showLabels', e.target.checked)}
+                className="form-checkbox h-4 w-4 text-blue-600 transition duration-150 ease-in-out"
               />
-              <span>Show Note Labels</span>
+              <span className="text-sm text-gray-300">Show Note Labels</span>
             </label>
-            <label className="flex items-center space-x-2">
+            <label className="flex items-center space-x-2 cursor-pointer">
               <input
                 type="checkbox"
                 checked={settings.showOctaveNumbers}
-                onChange={(e) => {
-                  console.log('Changing showOctaveNumbers to:', e.target.checked);
-                  setSettings(prev => ({...prev, showOctaveNumbers: e.target.checked}));
-                }}
-                className="form-checkbox"
+                onChange={(e) => handleSettingChange('showOctaveNumbers', e.target.checked)}
+                className="form-checkbox h-4 w-4 text-blue-600 transition duration-150 ease-in-out"
               />
-              <span>Show Octave Numbers</span>
+              <span className="text-sm text-gray-300">Show Octave Numbers</span>
             </label>
-            <label className="flex items-center space-x-2">
+            <label className="flex items-center space-x-2 cursor-pointer">
               <input
                 type="checkbox"
                 checked={settings.highlightMiddleC}
-                onChange={(e) => {
-                  console.log('Changing highlightMiddleC to:', e.target.checked);
-                  setSettings(prev => ({...prev, highlightMiddleC: e.target.checked}));
-                }}
-                className="form-checkbox"
+                onChange={(e) => handleSettingChange('highlightMiddleC', e.target.checked)}
+                className="form-checkbox h-4 w-4 text-blue-600 transition duration-150 ease-in-out"
               />
-              <span>Highlight Middle C</span>
+              <span className="text-sm text-gray-300">Highlight Middle C</span>
             </label>
           </div>
         </DraggableWindow>
       )}
     </div>
   );
-}
+};
 
 export default MIDIKeyboard; 
