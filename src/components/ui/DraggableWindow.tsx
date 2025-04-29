@@ -7,7 +7,7 @@ interface DraggableWindowProps {
   children: React.ReactNode;
   defaultPosition?: { x: number; y: number };
   onClose?: () => void;
-  onMinimize?: () => void;
+  onMinimize?: (position: { x: number; y: number }) => void;
   className?: string;
 }
 
@@ -60,6 +60,12 @@ export function DraggableWindow({
     }
   };
 
+  const handleMinimize = () => {
+    if (onMinimize) {
+      onMinimize(position);
+    }
+  };
+
   return (
     <div
       ref={windowRef}
@@ -79,7 +85,7 @@ export function DraggableWindow({
         <div className="flex items-center gap-2">
           {onMinimize && (
             <button
-              onClick={onMinimize}
+              onClick={handleMinimize}
               className="text-white/70 hover:text-white/90"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
