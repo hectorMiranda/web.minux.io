@@ -39,7 +39,7 @@ const MINUX_REPOS = [
   }
 ];
 
-export default function HomePage() {
+export default function LandingPage() {
   const router = useRouter();
   const { isAuthenticated, setAuthenticated } = useAuthStore();
   const [mounted, setMounted] = useState(false);
@@ -70,6 +70,7 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-[#0B1120] text-white">
+      {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-[#0B1120]/80 backdrop-blur-lg border-b border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
@@ -101,6 +102,7 @@ export default function HomePage() {
         </div>
       </nav>
 
+      {/* Hero Section */}
       <section className="relative pt-20 pb-32 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="relative z-10 text-center">
@@ -142,6 +144,7 @@ export default function HomePage() {
             </motion.div>
           </div>
 
+          {/* Ecosystem Grid */}
           <motion.div
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
@@ -185,14 +188,17 @@ export default function HomePage() {
           </motion.div>
         </div>
 
+        {/* Background Elements */}
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute w-full h-full bg-[url('/grid.svg')] opacity-10" />
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/30 rounded-full blur-3xl" />
         </div>
       </section>
 
+      {/* Features Section */}
       <FeaturesSection />
 
+      {/* Footer */}
       <footer className="border-t border-white/10 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row items-center justify-between gap-8">
@@ -234,6 +240,7 @@ export default function HomePage() {
         </div>
       </footer>
 
+      {/* Auth Dialog */}
       {showPasswordDialog && (
         <PasswordDialog 
           onAuthenticate={handleAuthentication}
@@ -242,4 +249,4 @@ export default function HomePage() {
       )}
     </div>
   );
-}
+} 
