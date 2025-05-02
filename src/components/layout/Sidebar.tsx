@@ -19,7 +19,8 @@ import {
   ChevronRight,
   Blocks,
   Lock,
-  Music
+  Music,
+  Box
 } from 'lucide-react';
 import { MinuxLogo } from '../MinuxLogo';
 import { useSettingsStore } from '@/lib/settings';
@@ -124,6 +125,13 @@ const defaultMenuItems: MenuItem[] = [
     description: 'Virtual MIDI keyboard and controller',
     visible: true,
   },
+  {
+    icon: 'Box',
+    label: 'STL Explorer',
+    href: '/stl-explorer',
+    description: '3D STL file viewer and manager',
+    visible: true,
+  },
 ];
 
 export const Sidebar = () => {
@@ -172,6 +180,8 @@ export const Sidebar = () => {
         return <Blocks className="w-5 h-5" />;
       case 'Music':
         return <Music className="w-5 h-5" />;
+      case 'Box':
+        return <Box className="w-5 h-5" />;
       default:
         return <Home className="w-5 h-5" />;
     }
