@@ -105,6 +105,12 @@ export default function STLExplorer() {
     try {
       console.log('Selecting model:', model.name);
       
+      console.log('Model data:', {
+        id: model.id,
+        name: model.name,
+        base64Length: model.base64.length
+      });
+      
       const base64Data = model.base64.split(',')[1];
       const arrayBuffer = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0)).buffer;
       
@@ -112,7 +118,11 @@ export default function STLExplorer() {
       const geometry = loader.parse(arrayBuffer);
       geometry.computeBoundingSphere();
       
-      console.log('Geometry loaded:', geometry);
+      console.log('Geometry loaded:', {
+        vertices: geometry.attributes.position.count,
+        boundingSphere: geometry.boundingSphere
+      });
+      
       setGeometry(geometry);
       setSelectedModel(model);
     } catch (error) {

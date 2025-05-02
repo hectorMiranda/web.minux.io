@@ -79,12 +79,17 @@ export default function ThreeRenderer({ geometry, isPreview = false }: ThreeRend
     fillLight.position.set(-10, 5, -10);
     scene.add(fillLight);
 
-    // Add mesh with material
+    // Add better lighting for closer view
+    const rimLight = new THREE.DirectionalLight(0xffffff, 0.3);
+    rimLight.position.set(-5, -5, -5);
+    scene.add(rimLight);
+
+    // Adjust material for better visibility
     const material = new THREE.MeshPhysicalMaterial({
       color: 0xcccccc,
-      metalness: 0.2,
-      roughness: 0.4,
-      envMapIntensity: 1,
+      metalness: 0.4,
+      roughness: 0.3,
+      envMapIntensity: 1.2,
     });
 
     const mesh = new THREE.Mesh(geometry, material);
@@ -95,8 +100,8 @@ export default function ThreeRenderer({ geometry, isPreview = false }: ThreeRend
     geometry.computeBoundingSphere();
     const { radius } = geometry.boundingSphere!;
     const distance = isPreview 
-      ? radius * 2.5 // Closer view for thumbnails
-      : radius * 3.5; // Regular view for main display
+      ? radius * 2 // Closer view for thumbnails (was 2.5)
+      : radius * 2.2; // Closer view for main display (was 3.5)
     
     camera.position.set(distance, distance, distance);
     camera.lookAt(0, 0, 0);
@@ -182,7 +187,7 @@ export default function ThreeRenderer({ geometry, isPreview = false }: ThreeRend
     const camera = cameraRef.current;
     const controls = controlsRef.current;
     const { radius, center } = geometry.boundingSphere;
-    const distance = (radius * 3.5) / Math.tan((camera.fov / 2) * Math.PI / 180);
+    const distance = (radius * 2.2) / Math.tan((camera.fov / 2) * Math.PI / 180);
 
     switch (currentView) {
       case 'front':

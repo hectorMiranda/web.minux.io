@@ -76,10 +76,14 @@ export default function ModelPreview({
   return (
     <div className="relative group">
       <div 
-        className={`aspect-square border rounded-lg overflow-hidden cursor-pointer transition-colors ${
+        className={`aspect-square border rounded-lg overflow-hidden cursor-pointer transition-colors pointer-events-auto ${
           isSelected ? 'border-primary' : 'border-white/10 hover:border-white/20'
         }`}
-        onClick={onClick}
+        onClick={(e) => {
+          e.stopPropagation();
+          console.log('ModelPreview clicked');
+          onClick();
+        }}
       >
         {error ? (
           <div className="w-full h-full flex items-center justify-center text-xs text-red-500 p-2 text-center">
@@ -96,7 +100,7 @@ export default function ModelPreview({
         ) : null}
       </div>
 
-      <div className="absolute inset-0 flex items-end justify-between p-2 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="absolute inset-0 flex items-end justify-between p-2 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
         <span className="text-xs font-medium truncate text-white flex-1 mr-2">
           {model.name}
         </span>
@@ -105,7 +109,7 @@ export default function ModelPreview({
             e.stopPropagation();
             onDelete();
           }}
-          className="text-red-500 hover:text-red-400 p-1 rounded hover:bg-white/10"
+          className="text-red-500 hover:text-red-400 p-1 rounded hover:bg-white/10 pointer-events-auto"
         >
           <Trash2 className="w-4 h-4" />
         </button>
