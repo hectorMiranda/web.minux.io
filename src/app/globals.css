@@ -153,3 +153,19 @@ body {
     text-wrap: balance;
   }
 }
+
+/* Add these styles to remove scrollbars and ensure full viewport usage */
+html, body {
+  overflow: hidden;
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/* Ensure the app takes up the full viewport */
+#__next, main {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}

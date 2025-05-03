@@ -1,9 +1,23 @@
 /** @type {import('next').NextConfig} */
-const path = require('path');
-
 const nextConfig = {
-  webpack(config) {
-    config.resolve.alias['@'] = path.resolve(__dirname, 'src');
+  reactStrictMode: true,
+  transpilePackages: ['three'],
+  
+  // Compiler options for SWC
+  compiler: {
+    styledComponents: true,
+  },
+  
+  webpack: (config) => {
+    config.externals = [...(config.externals || []), { canvas: 'canvas' }];
+    
+    // Add rule for shader files if needed
+    config.module.rules.push({
+      test: /\.(glsl|vs|fs|vert|frag)$/,
+      exclude: /node_modules/,
+      use: ['raw-loader', 'glslify-loader'],
+    });
+
     return config;
   },
 };

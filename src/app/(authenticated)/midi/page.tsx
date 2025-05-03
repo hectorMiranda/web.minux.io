@@ -8,10 +8,17 @@ import { MIDIToolbar } from '@/components/midi/MIDIToolbar';
 import { MIDISettings } from '@/components/midi/MIDISettings';
 import { MozartSequencer } from '@/components/midi/MozartSequencer';
 import { MozartPiece } from '@/data/mozartPieces';
+import { Suspense } from 'react';
+import ClientOnly from '@/components/midi/ClientOnly';
 
-// Dynamically import components that use browser APIs with ssr: false
+// Import MIDIKeyboard with no SSR
 const MIDIKeyboard = dynamic(() => import('@/components/midi/MIDIKeyboard'), {
   ssr: false,
+  loading: () => (
+    <div className="w-full h-full flex items-center justify-center">
+      <div className="text-white/50">Loading MIDI interface...</div>
+    </div>
+  )
 });
 
 const DebugConsole = dynamic(() => import('@/components/midi/DebugConsole'), {
@@ -192,9 +199,8 @@ export default function MIDIPage() {
   }, [initializeMIDI]);
 
   return (
-    <div className="relative flex flex-col h-full bg-[#0a192f] text-gray-300">
-      {/* Toolbar with Mozart player */}
-      <MIDIToolbar 
+    <div className="w-full h-full bg-[#1a1a1a] overflow-hidden">
+      <MIDIToolbar
         onPlayNote={handleNoteOn}
         onPlayMozart={handlePlayMozart}
         onPauseMozart={handlePauseMozart}
@@ -211,55 +217,46 @@ export default function MIDIPage() {
         onToggleSettings={() => setShowSettings(!showSettings)}
         onToggleDebug={() => setShowDebug(!showDebug)}
       />
-
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col p-4 gap-4 mt-12">
-        {/* Grid Background */}
-        <div className="absolute inset-0 overflow-hidden opacity-10 pointer-events-none">
-          <div className="absolute inset-0" style={{
-            backgroundImage: `
-              linear-gradient(to right, #00ff88 1px, transparent 1px),
-              linear-gradient(to bottom, #00ff88 1px, transparent 1px)
-            `,
-            backgroundSize: '40px 40px'
-          }} />
-        </div>
-
-        {/* MIDI Keyboard */}
-        <div className="flex-1 rounded-lg overflow-hidden">
+      
+      <div className="w-full h-[calc(100vh-48px)] relative">
+        <ClientOnly>
           <MIDIKeyboard
             selectedOutput={selectedOutput}
             onNoteOn={handleNoteOn}
             onNoteOff={handleNoteOff}
           />
-        </div>
-
-        {/* Floating Windows */}
-        {showSettings && (
-          <DraggableWindow
-            title="MIDI Settings"
-            defaultPosition={{ x: 20, y: 60 }}
-            onClose={() => setShowSettings(false)}
-          >
-            <MIDISettings
-              midiAccess={midiAccess}
-              selectedOutput={selectedOutput}
-              onOutputSelect={handleOutputSelect}
-              error={error}
-            />
-          </DraggableWindow>
-        )}
-
-        {showDebug && (
-          <DraggableWindow
-            title="Debug Console"
-            defaultPosition={{ x: window.innerWidth - 420, y: 60 }}
-            onClose={() => setShowDebug(false)}
-          >
-            <DebugConsole messages={debugMessages} />
-          </DraggableWindow>
-        )}
+        </ClientOnly>
       </div>
+      
+      {showSettings && (
+        <DraggableWindow
+          title="MIDI Settings"
+          initialPosition={{ x: 100, y: 100 }}
+          onClose={() => setShowSettings(false)}
+        >
+          <MIDISettings 
+            midiAccess={midiAccess}
+            selectedOutput={selectedOutput}
+            onOutputSelect={handleOutputSelect}
+          />
+        </DraggableWindow>
+      )}
+      
+      {showDebug && (
+        <DraggableWindow
+          title="Debug Console"
+          initialPosition={{ x: 400, y: 100 }}
+          onClose={() => setShowDebug(false)}
+        >
+          <DebugConsole messages={debugMessages} />
+        </DraggableWindow>
+      )}
+      
+      {error && (
+        <div className="fixed bottom-4 right-4 bg-red-900/90 text-white p-4 rounded-md shadow-lg">
+          Error: {error}
+        </div>
+      )}
     </div>
   );
 } 
