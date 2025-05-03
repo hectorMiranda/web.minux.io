@@ -9,122 +9,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { useSettingsStore } from '@/lib/settings';
-
-interface MenuItem {
-  icon: string;
-  label: string;
-  href: string;
-  description?: string;
-  visible: boolean;
-  enabled: boolean;
-}
-
-const defaultMenuItems: MenuItem[] = [
-  {
-    icon: 'Terminal',
-    label: 'Console',
-    href: '/console',
-    description: 'System terminal access',
-    visible: true,
-    enabled: true,
-  },
-  {
-    icon: 'Home',
-    label: 'Dashboard',
-    href: '/dashboard',
-    description: 'System overview and status',
-    visible: true,
-    enabled: true,
-  },
-  {
-    icon: 'Cpu',
-    label: 'System',
-    href: '/system',
-    description: 'CPU, memory, and processes',
-    visible: true,
-    enabled: true,
-  },
-  {
-    icon: 'Thermometer',
-    label: 'Sensors',
-    href: '/sensors',
-    description: 'Temperature and voltage monitoring',
-    visible: true,
-    enabled: true,
-  },
-  {
-    icon: 'Network',
-    label: 'Network',
-    href: '/network',
-    description: 'Network interfaces and statistics',
-    visible: true,
-    enabled: true,
-  },
-  {
-    icon: 'Wifi',
-    label: 'Wi-Fi',
-    href: '/wifi',
-    description: 'Wireless network configuration',
-    visible: true,
-    enabled: true,
-  },
-  {
-    icon: 'HardDrive',
-    label: 'Storage',
-    href: '/storage',
-    description: 'Disk usage and management',
-    visible: true,
-    enabled: true,
-  },
-  {
-    icon: 'Gauge',
-    label: 'Performance',
-    href: '/performance',
-    description: 'System performance metrics',
-    visible: true,
-    enabled: true,
-  },
-  {
-    icon: 'Settings',
-    label: 'Settings',
-    href: '/settings',
-    description: 'System configuration',
-    visible: true,
-    enabled: true,
-  },
-  {
-    icon: 'Power',
-    label: 'Power',
-    href: '/power',
-    description: 'Power management and control',
-    visible: true,
-    enabled: true,
-  },
-  {
-    icon: 'Lock',
-    label: 'Security',
-    href: '/security',
-    description: 'System security settings',
-    visible: true,
-    enabled: true,
-  },
-  {
-    icon: 'Blocks',
-    label: 'Blockchain',
-    href: '/blockchain',
-    description: 'Blockchain-related operations',
-    visible: true,
-    enabled: true,
-  },
-  {
-    icon: 'Music',
-    label: 'MIDI Controller',
-    href: '/midi',
-    description: 'Virtual MIDI keyboard and controller',
-    visible: false,
-    enabled: true,
-  },
-];
+import { iconMap } from '@/lib/icons';
+import type { MenuItem } from '@/lib/settings';
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -133,9 +19,7 @@ export default function SettingsPage() {
   const [localHomePage, setLocalHomePage] = useState<string>(homePage);
 
   useEffect(() => {
-    if (menuItems.length === 0) {
-      setLocalMenuItems(defaultMenuItems);
-    }
+    setLocalMenuItems(menuItems);
   }, [menuItems]);
 
   const handleDragEnd = (result: DropResult) => {
@@ -197,7 +81,7 @@ export default function SettingsPage() {
                 <SelectValue placeholder="Select home page" />
               </SelectTrigger>
               <SelectContent>
-                {localMenuItems.filter(item => item.visible).map((item) => (
+                {localMenuItems.filter(item => item.visible && item.enabled).map((item) => (
                   <SelectItem key={item.href} value={item.href}>
                     {item.label}
                   </SelectItem>
@@ -220,61 +104,65 @@ export default function SettingsPage() {
                     ref={provided.innerRef}
                     className="space-y-2"
                   >
-                    {localMenuItems.map((item, index) => (
-                      <Draggable
-                        key={item.href}
-                        draggableId={item.href}
-                        index={index}
-                      >
-                        {(provided) => (
-                          <div
-                            ref={provided.innerRef}
-                            {...provided.draggableProps}
-                            {...provided.dragHandleProps}
-                            className={`flex items-center gap-4 p-4 rounded-lg ${
-                              item.visible ? 'bg-white/5' : 'bg-white/5 opacity-50'
-                            }`}
-                          >
-                            <div className="flex-1">
-                              <div className="font-medium">{item.label}</div>
-                              {item.description && (
-                                <div className="text-sm text-white/50">
-                                  {item.description}
-                                </div>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => toggleEnabled(index)}
-                                className="hover:bg-white/10"
-                                title={item.enabled ? "Enabled" : "Disabled"}
-                              >
-                                {item.enabled ? (
-                                  <ToggleRight className="h-4 w-4 text-green-400" />
-                                ) : (
-                                  <ToggleLeft className="h-4 w-4" />
+                    {localMenuItems.map((item, index) => {
+                      const IconComponent = iconMap[item.icon];
+                      return (
+                        <Draggable
+                          key={item.href}
+                          draggableId={item.href}
+                          index={index}
+                        >
+                          {(provided) => (
+                            <div
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              {...provided.dragHandleProps}
+                              className={`flex items-center gap-4 p-4 rounded-lg ${
+                                item.enabled ? 'bg-white/5' : 'bg-white/5 opacity-50'
+                              }`}
+                            >
+                              {IconComponent && <IconComponent className="w-5 h-5" />}
+                              <div className="flex-1">
+                                <div className="font-medium">{item.label}</div>
+                                {item.description && (
+                                  <div className="text-sm text-white/50">
+                                    {item.description}
+                                  </div>
                                 )}
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => toggleVisibility(index)}
-                                className="hover:bg-white/10"
-                                title={item.visible ? "Visible" : "Hidden"}
-                              >
-                                {item.visible ? (
-                                  <Eye className="h-4 w-4" />
-                                ) : (
-                                  <EyeOff className="h-4 w-4" />
-                                )}
-                              </Button>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => toggleEnabled(index)}
+                                  className="hover:bg-white/10"
+                                  title={item.enabled ? "Enabled" : "Disabled"}
+                                >
+                                  {item.enabled ? (
+                                    <ToggleRight className="h-4 w-4 text-green-400" />
+                                  ) : (
+                                    <ToggleLeft className="h-4 w-4" />
+                                  )}
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => toggleVisibility(index)}
+                                  className="hover:bg-white/10"
+                                  title={item.visible ? "Visible" : "Hidden"}
+                                >
+                                  {item.visible ? (
+                                    <Eye className="h-4 w-4" />
+                                  ) : (
+                                    <EyeOff className="h-4 w-4" />
+                                  )}
+                                </Button>
+                              </div>
                             </div>
-                          </div>
-                        )}
-                      </Draggable>
-                    ))}
+                          )}
+                        </Draggable>
+                      );
+                    })}
                     {provided.placeholder}
                   </div>
                 )}

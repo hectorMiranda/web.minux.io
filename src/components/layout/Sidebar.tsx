@@ -24,14 +24,8 @@ import {
 } from 'lucide-react';
 import { MinuxLogo } from '../MinuxLogo';
 import { useSettingsStore } from '@/lib/settings';
-
-interface MenuItem {
-  icon: string;
-  label: string;
-  href: string;
-  description?: string;
-  visible: boolean;
-}
+import { iconMap, type IconName } from '@/lib/icons';
+import type { MenuItem } from '@/lib/settings';
 
 const defaultMenuItems: MenuItem[] = [
   {
@@ -152,39 +146,9 @@ export const Sidebar = () => {
     }
   }, [pathname, router, homePage, savedMenuItems]);
 
-  const getIconComponent = (iconName: string) => {
-    switch (iconName) {
-      case 'Terminal':
-        return <Terminal className="w-5 h-5" />;
-      case 'Home':
-        return <Home className="w-5 h-5" />;
-      case 'Cpu':
-        return <Cpu className="w-5 h-5" />;
-      case 'Thermometer':
-        return <Thermometer className="w-5 h-5" />;
-      case 'Network':
-        return <Network className="w-5 h-5" />;
-      case 'Wifi':
-        return <Wifi className="w-5 h-5" />;
-      case 'HardDrive':
-        return <HardDrive className="w-5 h-5" />;
-      case 'Gauge':
-        return <Gauge className="w-5 h-5" />;
-      case 'Settings':
-        return <Settings className="w-5 h-5" />;
-      case 'Power':
-        return <Power className="w-5 h-5" />;
-      case 'Lock':
-        return <Lock className="w-5 h-5" />;
-      case 'Blocks':
-        return <Blocks className="w-5 h-5" />;
-      case 'Music':
-        return <Music className="w-5 h-5" />;
-      case 'Box':
-        return <Box className="w-5 h-5" />;
-      default:
-        return <Home className="w-5 h-5" />;
-    }
+  const getIconComponent = (iconName: IconName) => {
+    const IconComponent = iconMap[iconName];
+    return IconComponent ? <IconComponent className="w-5 h-5" /> : null;
   };
 
   const handleHomeClick = (e: React.MouseEvent) => {
@@ -226,7 +190,7 @@ export const Sidebar = () => {
                     }`}
                   >
                     <div className={`${isActive ? 'text-primary' : 'text-white/50'} transition-colors flex-shrink-0`}>
-                      {getIconComponent(item.icon)}
+                      {getIconComponent(item.icon as IconName)}
                     </div>
                     {isExpanded && (
                       <span className={`text-sm ${isActive ? 'font-medium' : ''}`}>

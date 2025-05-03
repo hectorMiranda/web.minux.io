@@ -10,11 +10,7 @@ export default function ClientOnly({ children }: { children: React.ReactNode }) 
   }, []);
 
   if (!hasMounted) {
-    return (
-      <div className="w-full h-full flex items-center justify-center">
-        <div className="text-white/50">Loading...</div>
-      </div>
-    );
+    return null;
   }
 
   return <>{children}</>;
