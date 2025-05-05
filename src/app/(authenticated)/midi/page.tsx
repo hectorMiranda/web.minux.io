@@ -71,13 +71,16 @@ export default function MIDIPage() {
     // Add MIDI message handler
     input.onmidimessage = (event) => {
       const [status, note, velocity] = event.data;
+      const command = status & 0xF0;
+      
+      console.log('MIDI Message:', { command, note, velocity }); // Debug logging
       
       // Note on with velocity > 0
-      if ((status & 0xf0) === 0x90 && velocity > 0) {
+      if (command === 0x90 && velocity > 0) {
         handleNoteOn(note, velocity);
       }
-      // Note off or note on with 0 velocity
-      else if ((status & 0xf0) === 0x80 || ((status & 0xf0) === 0x90 && velocity === 0)) {
+      // Note off or note on with 0 velocity (which is equivalent to note off)
+      else if (command === 0x80 || (command === 0x90 && velocity === 0)) {
         handleNoteOff(note);
       }
     };
@@ -111,7 +114,7 @@ export default function MIDIPage() {
   const handleNoteOff = useCallback((note: number) => {
     console.log('Note Off:', note);
     
-    // Update active notes
+    // Update active notes - make sure we're creating a new Set to trigger re-render
     setActiveNotes(prev => {
       const next = new Set(prev);
       next.delete(note);
@@ -226,6 +229,42 @@ export default function MIDIPage() {
   const toggleHelp = useCallback(() => {
     setShowHelp(!showHelp);
   }, [showHelp, setShowHelp]);
+
+  // Add debug logging for activeNotes changes
+  useEffect(() => {
+    console.log('Active notes changed:', Array.from(activeNotes));
+  }, [activeNotes]);
+
+  // Fix mouse click handling to ensure keys are properly released
+  const handleClick = (event: MouseEvent) => {
+    if (!containerRef.current || !camera || !scene) return;
+    
+    const rect = containerRef.current.getBoundingClientRect();
+    mouse.x = ((event.clientX - rect.left) / containerRef.current.clientWidth) * 2 - 1;
+    mouse.y = -((event.clientY - rect.top) / containerRef.current.clientHeight) * 2 + 1;
+    
+    raycaster.setFromCamera(mouse, camera);
+    
+    const allKeys = [...whiteKeysRef.current, ...blackKeysRef.current];
+    const intersects = raycaster.intersectObjects(allKeys, false);
+    
+    if (intersects.length > 0) {
+      const keyMesh = intersects[0].object as THREE.Mesh;
+      const note = keyMesh.userData.note as number;
+      
+      // Toggle note state - if it's active, turn it off; otherwise turn it on
+      if (activeNotes.has(note)) {
+        onNoteOff(note); // This will remove it from activeNotes in the parent
+      } else {
+        onNoteOn(note, 100); // This will add it to activeNotes in the parent
+        
+        // Auto-release the note after a short delay (for click interactions only)
+        setTimeout(() => {
+          onNoteOff(note);
+        }, 300);
+      }
+    }
+  };
 
   return (
     <div className="w-full h-full bg-[#121212] overflow-hidden flex flex-col">

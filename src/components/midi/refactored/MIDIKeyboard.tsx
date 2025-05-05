@@ -429,7 +429,7 @@ export default function MIDIKeyboard({
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
 
-    // Handle mouse clicks
+    // Handle mouse clicks with proper release
     const handleClick = (event: MouseEvent) => {
       if (!containerRef.current || !camera || !scene) return;
       
@@ -445,7 +445,18 @@ export default function MIDIKeyboard({
       if (intersects.length > 0) {
         const keyMesh = intersects[0].object as THREE.Mesh;
         const note = keyMesh.userData.note as number;
-        handleKeyPress(note);
+        
+        // If note is already active, turn it off, otherwise turn it on
+        if (activeNotes.has(note)) {
+          onNoteOff(note);
+        } else {
+          onNoteOn(note, 100);
+          
+          // Automatically release the note after a short delay for UI clicks
+          setTimeout(() => {
+            onNoteOff(note);
+          }, 300);
+        }
       }
     };
 
@@ -457,13 +468,18 @@ export default function MIDIKeyboard({
       
       requestAnimationFrame(animate);
       
-      // Update key colors based on active state
+      // Update key appearance and position based on active state
       whiteKeysRef.current.forEach(key => {
         const material = key.material as THREE.MeshStandardMaterial;
         const note = key.userData.note as number;
+        const isActive = activeNotes.has(note);
         
-        // Different coloring for different modes
-        if (activeNotes.has(note)) {
+        // Update key position
+        const originalY = key.userData.originalY || 0;
+        key.position.y = isActive ? originalY - 0.05 : originalY;
+        
+        // Update key color based on active state
+        if (isActive) {
           // Get note color based on note name
           const noteInfo = getNoteInfo(note);
           material.color.set(noteInfo.color);
