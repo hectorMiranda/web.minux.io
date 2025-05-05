@@ -3,16 +3,13 @@
 import { useCallback, useState, useRef, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { DraggableWindow } from '@/components/ui/DraggableWindow';
-import { DebugMessage } from '@/components/midi/types';
-import { MIDIToolbar } from '@/components/midi/MIDIToolbar';
-import { MIDISettings } from '@/components/midi/MIDISettings';
-import { MozartSequencer } from '@/components/midi/MozartSequencer';
-import { MozartPiece } from '@/data/mozartPieces';
+import { DebugMessage, PracticeMode } from '@/components/midi/refactored/types';
+import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { Suspense } from 'react';
 import ClientOnly from '@/components/midi/ClientOnly';
 
-// Import MIDIKeyboard with no SSR
-const MIDIKeyboard = dynamic(() => import('@/components/midi/MIDIKeyboard'), {
+// Import components with no SSR
+const MIDIKeyboard = dynamic(() => import('@/components/midi/refactored/MIDIKeyboard'), {
   ssr: false,
   loading: () => (
     <div className="w-full h-full flex items-center justify-center">
@@ -21,22 +18,38 @@ const MIDIKeyboard = dynamic(() => import('@/components/midi/MIDIKeyboard'), {
   )
 });
 
-const DebugConsole = dynamic(() => import('@/components/midi/DebugConsole'), {
+const MIDIToolbar = dynamic(() => import('@/components/midi/refactored/MIDIToolbar'), {
+  ssr: false,
+});
+
+const DebugConsole = dynamic(() => import('@/components/midi/refactored/DebugConsole'), {
+  ssr: false,
+});
+
+const ExercisePanel = dynamic(() => import('@/components/midi/refactored/ExercisePanel'), {
   ssr: false,
 });
 
 export default function MIDIPage() {
+  // MIDI state
   const [midiAccess, setMidiAccess] = useState<WebMidi.MIDIAccess | null>(null);
-  const [error, setError] = useState<string>('');
+  const [selectedInput, setSelectedInput] = useState<WebMidi.MIDIInput | null>(null);
   const [selectedOutput, setSelectedOutput] = useState<WebMidi.MIDIOutput | null>(null);
+  const [error, setError] = useState<string>('');
+  
+  // UI state with localStorage persistence
+  const [showExercises, setShowExercises] = useLocalStorage('midi.showExercises', false);
+  const [showDebug, setShowDebug] = useLocalStorage('midi.showDebug', false);
+  const [showSettings, setShowSettings] = useLocalStorage('midi.showSettings', false);
+  const [showHelp, setShowHelp] = useLocalStorage('midi.showHelp', false);
+  
+  // Piano state
+  const [activeNotes, setActiveNotes] = useState<Set<number>>(new Set());
+  const [expectedNotes, setExpectedNotes] = useState<number[]>([]);
+  const [currentExerciseMode, setCurrentExerciseMode] = useState<PracticeMode | null>(null);
   const [debugMessages, setDebugMessages] = useState<DebugMessage[]>([]);
-  const [showSettings, setShowSettings] = useState(false);
-  const [showDebug, setShowDebug] = useState(false);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
-  const [selectedPiece, setSelectedPiece] = useState<MozartPiece | null>(null);
-  const mozartSequencerRef = useRef<MozartSequencer | null>(null);
 
+  // Add debug message helper
   const addDebugMessage = useCallback((message: string, type: 'info' | 'error' | 'midi' = 'info') => {
     setDebugMessages(prev => [...prev, {
       timestamp: new Date(),
@@ -45,218 +58,326 @@ export default function MIDIPage() {
     }]);
   }, []);
 
+  // MIDI event handlers
+  const handleInputSelect = useCallback((input: WebMidi.MIDIInput) => {
+    // Disconnect previous input if exists
+    if (selectedInput) {
+      selectedInput.onmidimessage = null;
+    }
+    
+    setSelectedInput(input);
+    addDebugMessage(`Selected input device: ${input.name}`, 'info');
+    
+    // Add MIDI message handler
+    input.onmidimessage = (event) => {
+      const [status, note, velocity] = event.data;
+      
+      // Note on with velocity > 0
+      if ((status & 0xf0) === 0x90 && velocity > 0) {
+        handleNoteOn(note, velocity);
+      }
+      // Note off or note on with 0 velocity
+      else if ((status & 0xf0) === 0x80 || ((status & 0xf0) === 0x90 && velocity === 0)) {
+        handleNoteOff(note);
+      }
+    };
+    
+  }, [selectedInput, addDebugMessage]);
+
   const handleOutputSelect = useCallback((output: WebMidi.MIDIOutput) => {
     setSelectedOutput(output);
     addDebugMessage(`Selected output device: ${output.name}`, 'info');
   }, [addDebugMessage]);
 
-  const handleNoteOn = useCallback((note: number) => {
-    console.log('Sending Note On:', note, 'to output:', selectedOutput?.name);
+  // Note handling
+  const handleNoteOn = useCallback((note: number, velocity: number) => {
+    console.log('Note On:', note, 'Velocity:', velocity);
+    
+    // Update active notes
+    setActiveNotes(prev => new Set(prev).add(note));
+    
+    // Send to MIDI output if available
     if (selectedOutput) {
       try {
-        selectedOutput.send([0x90, note, 0x7f]);
-        addDebugMessage(`Note On: ${note}`, 'midi');
+        selectedOutput.send([0x90, note, velocity]);
+        addDebugMessage(`Note On: ${note} (vel: ${velocity})`, 'midi');
       } catch (err) {
         console.error('Failed to send Note On:', err);
         addDebugMessage(`Failed to send Note On: ${err}`, 'error');
       }
-    } else {
-      console.warn('No MIDI output selected for Note On');
     }
   }, [selectedOutput, addDebugMessage]);
 
   const handleNoteOff = useCallback((note: number) => {
-    console.log('Sending Note Off:', note, 'to output:', selectedOutput?.name);
+    console.log('Note Off:', note);
+    
+    // Update active notes
+    setActiveNotes(prev => {
+      const next = new Set(prev);
+      next.delete(note);
+      return next;
+    });
+    
+    // Send to MIDI output if available
     if (selectedOutput) {
       try {
-        selectedOutput.send([0x80, note, 0x00]);
+        selectedOutput.send([0x80, note, 0]);
         addDebugMessage(`Note Off: ${note}`, 'midi');
       } catch (err) {
         console.error('Failed to send Note Off:', err);
         addDebugMessage(`Failed to send Note Off: ${err}`, 'error');
       }
-    } else {
-      console.warn('No MIDI output selected for Note Off');
     }
   }, [selectedOutput, addDebugMessage]);
 
-  // Initialize or update Mozart sequencer when output changes
-  useEffect(() => {
-    if (selectedOutput) {
-      mozartSequencerRef.current = new MozartSequencer(
-        [], // Initial empty notes array
-        120, // Default tempo of 120 BPM
-        handleNoteOn,
-        handleNoteOff
-      );
-      if (selectedPiece) {
-        mozartSequencerRef.current.setNotes(selectedPiece.sequence);
-      }
-    } else {
-      mozartSequencerRef.current = null;
-    }
-  }, [selectedOutput, handleNoteOn, handleNoteOff, selectedPiece]);
-
-  const handleSelectPiece = useCallback((piece: MozartPiece) => {
-    setSelectedPiece(piece);
-    addDebugMessage(`Selected piece: ${piece.title}`, 'info');
-    if (mozartSequencerRef.current) {
-      mozartSequencerRef.current.setNotes(piece.sequence);
-      // Reset playback state when selecting a new piece
-      setIsPlaying(false);
-      setIsPaused(false);
-    }
-  }, [addDebugMessage]);
-
-  const handlePlayMozart = useCallback(async () => {
-    if (!mozartSequencerRef.current || !selectedOutput || !selectedPiece) {
-      addDebugMessage('Cannot play: No MIDI output or piece selected', 'error');
-      return;
-    }
+  // Play a note with specified duration
+  const playNote = useCallback((note: number, velocity: number, duration: number) => {
+    handleNoteOn(note, velocity);
     
-    try {
-      setIsPlaying(true);
-      setIsPaused(false);
-      addDebugMessage(`Started playing: ${selectedPiece.title}`, 'info');
-      await mozartSequencerRef.current.play();
-      // Only reset states if the piece finished playing naturally
-      if (mozartSequencerRef.current.isCurrentlyPlaying()) {
-        setIsPlaying(false);
-        setIsPaused(false);
-      }
-    } catch (err) {
-      addDebugMessage(`Error playing piece: ${err}`, 'error');
-      setIsPlaying(false);
-      setIsPaused(false);
-    }
-  }, [selectedOutput, selectedPiece, addDebugMessage]);
+    setTimeout(() => {
+      handleNoteOff(note);
+    }, duration);
+  }, [handleNoteOn, handleNoteOff]);
 
-  const handlePauseMozart = useCallback(() => {
-    if (!mozartSequencerRef.current) return;
-    
-    mozartSequencerRef.current.pause();
-    setIsPaused(true);
-    setIsPlaying(false);
-    addDebugMessage('Paused playback', 'info');
-  }, [addDebugMessage]);
-
-  const handleResumeMozart = useCallback(() => {
-    if (!mozartSequencerRef.current) return;
-    
-    mozartSequencerRef.current.resume();
-    setIsPaused(false);
-    setIsPlaying(true);
-    addDebugMessage('Resumed playback', 'info');
-  }, [addDebugMessage]);
-
-  const handleStopMozart = useCallback(() => {
-    if (!mozartSequencerRef.current) return;
-    
-    mozartSequencerRef.current.stop();
-    setIsPlaying(false);
-    setIsPaused(false);
-    addDebugMessage('Stopped playback', 'info');
-  }, [addDebugMessage]);
-
+  // Initialize MIDI
   const initializeMIDI = useCallback(async () => {
     try {
       if (navigator.requestMIDIAccess) {
-        const access = await navigator.requestMIDIAccess();
+        const access = await navigator.requestMIDIAccess({ sysex: false });
         setMidiAccess(access);
         addDebugMessage('MIDI access granted', 'info');
 
-        // Log available outputs
+        // Log available devices
+        const inputs = Array.from(access.inputs.values());
         const outputs = Array.from(access.outputs.values());
-        console.log('Available MIDI outputs:', outputs);
+        
+        addDebugMessage(`Found ${inputs.length} input(s) and ${outputs.length} output(s)`, 'info');
+        
+        inputs.forEach(input => {
+          addDebugMessage(`Input: ${input.name || input.id}`, 'info');
+        });
+        
         outputs.forEach(output => {
-          console.log(`Output: ${output.name}, ID: ${output.id}, State: ${output.state}, Connection: ${output.connection}`);
+          addDebugMessage(`Output: ${output.name || output.id}`, 'info');
         });
 
-        // Auto-select the first available output if none is selected
-        if (!selectedOutput) {
-          if (outputs.length > 0) {
-            console.log('Auto-selecting first output:', outputs[0].name);
-            handleOutputSelect(outputs[0]);
-          } else {
-            console.warn('No MIDI outputs available');
-            addDebugMessage('No MIDI outputs found', 'error');
-          }
+        // Auto-select first available devices
+        if (!selectedInput && inputs.length > 0) {
+          handleInputSelect(inputs[0]);
         }
+        
+        if (!selectedOutput && outputs.length > 0) {
+          handleOutputSelect(outputs[0]);
+        }
+        
+        // Set up state change listener
+        access.onstatechange = (event) => {
+          const port = event.port as WebMidi.MIDIPort;
+          addDebugMessage(`MIDI port ${port.name || port.id} state changed to ${port.state}`, 'info');
+          
+          // Refresh our device lists when changes occur
+          if (port.state === 'disconnected') {
+            if (selectedInput && port.id === selectedInput.id) {
+              setSelectedInput(null);
+              addDebugMessage(`Input ${port.name || port.id} disconnected`, 'error');
+            }
+            if (selectedOutput && port.id === selectedOutput.id) {
+              setSelectedOutput(null);
+              addDebugMessage(`Output ${port.name || port.id} disconnected`, 'error');
+            }
+          }
+        };
       } else {
         setError('Web MIDI API is not supported in your browser');
         addDebugMessage('Web MIDI API not supported', 'error');
       }
     } catch (err) {
       console.error('MIDI initialization error:', err);
-      setError('Failed to access MIDI devices');
+      setError(`Failed to access MIDI devices: ${err}`);
       addDebugMessage(`MIDI access error: ${err}`, 'error');
     }
-  }, [addDebugMessage, handleOutputSelect, selectedOutput]);
+  }, [addDebugMessage, handleInputSelect, handleOutputSelect, selectedInput, selectedOutput]);
 
-  // Auto-connect to MIDI devices on page load
+  // Initialize MIDI on component mount
   useEffect(() => {
     initializeMIDI();
+    
+    // Cleanup function
+    return () => {
+      if (selectedInput) {
+        selectedInput.onmidimessage = null;
+      }
+    };
   }, [initializeMIDI]);
 
+  // Toggle visibility states
+  const toggleExercises = useCallback(() => {
+    setShowExercises(!showExercises);
+  }, [showExercises, setShowExercises]);
+  
+  const toggleDebug = useCallback(() => {
+    setShowDebug(!showDebug);
+  }, [showDebug, setShowDebug]);
+  
+  const toggleSettings = useCallback(() => {
+    setShowSettings(!showSettings);
+  }, [showSettings, setShowSettings]);
+  
+  const toggleHelp = useCallback(() => {
+    setShowHelp(!showHelp);
+  }, [showHelp, setShowHelp]);
+
   return (
-    <div className="w-full h-full bg-[#1a1a1a] overflow-hidden">
+    <div className="w-full h-full bg-[#121212] overflow-hidden flex flex-col">
+      {/* Toolbar */}
       <MIDIToolbar
-        onPlayNote={handleNoteOn}
-        onPlayMozart={handlePlayMozart}
-        onPauseMozart={handlePauseMozart}
-        onResumeMozart={handleResumeMozart}
-        onStopMozart={handleStopMozart}
-        onSelectPiece={handleSelectPiece}
-        selectedPiece={selectedPiece}
-        isPlaying={isPlaying}
-        isPaused={isPaused}
-        selectedOutput={selectedOutput}
         midiAccess={midiAccess}
+        selectedInput={selectedInput}
+        selectedOutput={selectedOutput}
+        onInputSelect={handleInputSelect}
         onOutputSelect={handleOutputSelect}
-        onInitializeMIDI={initializeMIDI}
-        onToggleSettings={() => setShowSettings(!showSettings)}
-        onToggleDebug={() => setShowDebug(!showDebug)}
+        onRefreshDevices={initializeMIDI}
+        onToggleSettings={toggleSettings}
+        onToggleDebug={toggleDebug}
+        onToggleExercises={toggleExercises}
+        onToggleHelp={toggleHelp}
+        showExercises={showExercises}
+        showDebug={showDebug}
+        title="MIDI Piano"
       />
       
-      <div className="w-full h-[calc(100vh-48px)] relative">
+      {/* Main content area */}
+      <div className="flex-1 relative">
         <ClientOnly>
           <MIDIKeyboard
             selectedOutput={selectedOutput}
             onNoteOn={handleNoteOn}
             onNoteOff={handleNoteOff}
+            activeNotes={activeNotes}
+            showDebug={showDebug}
+            exerciseMode={currentExerciseMode}
+            expectedNotes={expectedNotes}
           />
         </ClientOnly>
+        
+        {/* Exercise panel */}
+        {showExercises && (
+          <div className="absolute top-4 left-4 z-10">
+            <ExercisePanel
+              onExpectedNotesChange={setExpectedNotes}
+              onExerciseModeChange={setCurrentExerciseMode}
+              onNotePlay={playNote}
+              activeNotes={activeNotes}
+            />
+          </div>
+        )}
+        
+        {/* Settings window */}
+        {showSettings && (
+          <DraggableWindow
+            title="Keyboard Settings"
+            initialPosition={{ x: 100, y: 100 }}
+            onClose={toggleSettings}
+          >
+            <div className="p-4 w-80">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <label className="text-white/70 text-sm">MIDI Status</label>
+                  <div className="flex items-center">
+                    <div className={`w-2 h-2 rounded-full mr-1 ${midiAccess ? 'bg-green-500' : 'bg-red-500'}`} />
+                    <span className="text-sm text-white/70">
+                      {midiAccess ? 'Connected' : 'Not Connected'}
+                    </span>
+                  </div>
+                </div>
+                
+                {error && (
+                  <div className="bg-red-500/20 text-red-400 p-3 rounded-md text-sm">
+                    {error}
+                  </div>
+                )}
+                
+                <div className="border-t border-white/10 pt-3">
+                  <h3 className="text-white text-sm font-medium mb-2">Keyboard Information</h3>
+                  <div className="text-white/70 text-sm space-y-1">
+                    <p>Total white keys: 52</p>
+                    <p>Total black keys: 36</p>
+                    <p>Range: C2 to C6</p>
+                  </div>
+                </div>
+                
+                <div className="border-t border-white/10 pt-3">
+                  <h3 className="text-white text-sm font-medium mb-2">Keyboard Shortcuts</h3>
+                  <div className="text-white/70 text-sm space-y-1">
+                    <p>Space - Toggle exercises panel</p>
+                    <p>D - Toggle debug panel</p>
+                    <p>H - Show help</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </DraggableWindow>
+        )}
+        
+        {/* Debug console */}
+        {showDebug && (
+          <DraggableWindow
+            title="Debug Console"
+            initialPosition={{ x: window.innerWidth - 520, y: 100 }}
+            onClose={toggleDebug}
+          >
+            <DebugConsole
+              messages={debugMessages}
+              onClear={() => setDebugMessages([])}
+            />
+          </DraggableWindow>
+        )}
+        
+        {/* Help window */}
+        {showHelp && (
+          <DraggableWindow
+            title="Help & Documentation"
+            initialPosition={{ x: window.innerWidth / 2 - 250, y: 100 }}
+            onClose={toggleHelp}
+          >
+            <div className="p-4 w-[500px] max-h-[400px] overflow-y-auto">
+              <h2 className="text-lg font-medium mb-3 text-white">MIDI Piano Help</h2>
+              
+              <div className="space-y-4 text-white/80 text-sm">
+                <section>
+                  <h3 className="text-white font-medium mb-1">Getting Started</h3>
+                  <p>Connect a MIDI keyboard to your computer and refresh the MIDI devices. Select your input and output devices from the toolbar.</p>
+                </section>
+                
+                <section>
+                  <h3 className="text-white font-medium mb-1">Practice Modes</h3>
+                  <ul className="list-disc pl-5 space-y-1">
+                    <li><strong>Free Play</strong> - Play anything on the keyboard</li>
+                    <li><strong>Scales</strong> - Practice common scales with visual keyboard highlighting</li>
+                    <li><strong>Chords</strong> - Practice chord shapes and progressions</li>
+                    <li><strong>Intervals</strong> - Improve your ear training with interval recognition</li>
+                    <li><strong>Sight Reading</strong> - Practice reading and playing notes</li>
+                  </ul>
+                </section>
+                
+                <section>
+                  <h3 className="text-white font-medium mb-1">Keyboard Views</h3>
+                  <p>Change your viewing angle using the view buttons in the top-right corner of the keyboard. You can toggle note labels and finger numbers in the settings.</p>
+                </section>
+                
+                <section>
+                  <h3 className="text-white font-medium mb-1">Troubleshooting</h3>
+                  <ul className="list-disc pl-5 space-y-1">
+                    <li>If your MIDI device isn't recognized, try refreshing the MIDI devices</li>
+                    <li>Make sure your browser supports the Web MIDI API (Chrome recommended)</li>
+                    <li>Check the Debug Console for detailed MIDI messages and errors</li>
+                  </ul>
+                </section>
+              </div>
+            </div>
+          </DraggableWindow>
+        )}
       </div>
-      
-      {showSettings && (
-        <DraggableWindow
-          title="MIDI Settings"
-          initialPosition={{ x: 100, y: 100 }}
-          onClose={() => setShowSettings(false)}
-        >
-          <MIDISettings 
-            midiAccess={midiAccess}
-            selectedOutput={selectedOutput}
-            onOutputSelect={handleOutputSelect}
-          />
-        </DraggableWindow>
-      )}
-      
-      {showDebug && (
-        <DraggableWindow
-          title="Debug Console"
-          initialPosition={{ x: 400, y: 100 }}
-          onClose={() => setShowDebug(false)}
-        >
-          <DebugConsole messages={debugMessages} />
-        </DraggableWindow>
-      )}
-      
-      {error && (
-        <div className="fixed bottom-4 right-4 bg-red-900/90 text-white p-4 rounded-md shadow-lg">
-          Error: {error}
-        </div>
-      )}
     </div>
   );
 } 
