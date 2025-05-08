@@ -96,6 +96,60 @@ async function getNetworkStats() {
   }
 }
 
+/**
+ * @swagger
+ * /api/system-info:
+ *   get:
+ *     summary: Get system information
+ *     description: Returns system information including CPU, memory, and network details
+ *     tags:
+ *       - System
+ *     responses:
+ *       200:
+ *         description: System information retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 platform:
+ *                   type: string
+ *                   example: darwin
+ *                 arch:
+ *                   type: string
+ *                   example: x64
+ *                 hostname:
+ *                   type: string
+ *                   example: MacBook-Pro
+ *                 type:
+ *                   type: string
+ *                   example: Darwin
+ *                 release:
+ *                   type: string
+ *                   example: 21.6.0
+ *                 cpus:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                 cpuUsage:
+ *                   type: number
+ *                   example: 12.5
+ *                 totalMemory:
+ *                   type: number
+ *                   example: 17179869184
+ *                 freeMemory:
+ *                   type: number
+ *                   example: 8589934592
+ *                 network:
+ *                   type: object
+ *                   properties:
+ *                     speed:
+ *                       type: string
+ *                       example: 0.25
+ *                     latency:
+ *                       type: number
+ *                       example: 0
+ */
 export async function GET() {
   const [cpuUsage, networkStats] = await Promise.all([
     getCpuUsage(),

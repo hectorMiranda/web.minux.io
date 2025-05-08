@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
-import { Save, ArrowLeft, Eye, EyeOff, ToggleRight, ToggleLeft } from 'lucide-react';
+import { Save, ArrowLeft, Eye, EyeOff, ToggleRight, ToggleLeft, FileJson } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -14,9 +14,10 @@ import type { MenuItem } from '@/lib/settings';
 
 export default function SettingsPage() {
   const router = useRouter();
-  const { menuItems, homePage, setMenuItems, setHomePage } = useSettingsStore();
+  const { menuItems, homePage, enableSwaggerDocs, setMenuItems, setHomePage, setEnableSwaggerDocs } = useSettingsStore();
   const [localMenuItems, setLocalMenuItems] = useState<MenuItem[]>(menuItems);
   const [localHomePage, setLocalHomePage] = useState<string>(homePage);
+  const [localEnableSwaggerDocs, setLocalEnableSwaggerDocs] = useState<boolean>(enableSwaggerDocs);
 
   useEffect(() => {
     setLocalMenuItems(menuItems);
@@ -53,6 +54,7 @@ export default function SettingsPage() {
   const handleSave = () => {
     setMenuItems(localMenuItems);
     setHomePage(localHomePage);
+    setEnableSwaggerDocs(localEnableSwaggerDocs);
     toast.success('Settings saved successfully');
   };
 
@@ -88,6 +90,38 @@ export default function SettingsPage() {
                 ))}
               </SelectContent>
             </Select>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Developer Settings</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between p-4 rounded-lg bg-white/5">
+              <div className="flex items-center gap-3">
+                <FileJson className="w-5 h-5 text-primary" />
+                <div>
+                  <div className="font-medium">Swagger API Documentation</div>
+                  <div className="text-sm text-white/50">
+                    Enable OpenAPI documentation for API endpoints
+                  </div>
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setLocalEnableSwaggerDocs(!localEnableSwaggerDocs)}
+                className="hover:bg-white/10"
+                title={localEnableSwaggerDocs ? "Enabled" : "Disabled"}
+              >
+                {localEnableSwaggerDocs ? (
+                  <ToggleRight className="h-6 w-6 text-green-400" />
+                ) : (
+                  <ToggleLeft className="h-6 w-6" />
+                )}
+              </Button>
+            </div>
           </CardContent>
         </Card>
 

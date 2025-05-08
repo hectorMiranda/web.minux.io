@@ -14,6 +14,7 @@ import {
   Music,
   Box,
   FileText,
+  FileJson,
   // Add any new icons here
 } from 'lucide-react';
 
@@ -33,6 +34,7 @@ export const iconMap = {
   Music,
   Box,
   FileText,
+  FileJson,
   // Add mappings for new icons here
 } as const;
 

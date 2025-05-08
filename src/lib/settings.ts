@@ -14,8 +14,10 @@ export interface MenuItem {
 interface SettingsState {
   menuItems: MenuItem[];
   homePage: string;
+  enableSwaggerDocs: boolean;
   setMenuItems: (items: MenuItem[]) => void;
   setHomePage: (page: string) => void;
+  setEnableSwaggerDocs: (enabled: boolean) => void;
 }
 
 // Function to get all available pages
@@ -132,6 +134,14 @@ const getDefaultPages = (): MenuItem[] => {
       description: '3D STL file viewer and manager',
       visible: true,
       enabled: true,
+    },
+    {
+      icon: 'FileJson',
+      label: 'API Docs',
+      href: '/api-docs',
+      description: 'OpenAPI documentation for the Minux API',
+      visible: true,
+      enabled: true,
     }
   ];
 };
@@ -141,6 +151,7 @@ export const useSettingsStore = create<SettingsState>()(
     (set, get) => ({
       menuItems: getDefaultPages(), // Initialize with all pages
       homePage: '/console',
+      enableSwaggerDocs: true,
       setMenuItems: (items) => {
         // When setting new items, preserve any existing ones and their states
         const currentItems = get().menuItems;
@@ -160,6 +171,7 @@ export const useSettingsStore = create<SettingsState>()(
         set({ menuItems: mergedItems });
       },
       setHomePage: (page) => set({ homePage: page }),
+      setEnableSwaggerDocs: (enabled) => set({ enableSwaggerDocs: enabled }),
     }),
     {
       name: 'settings-storage',

@@ -169,3 +169,95 @@ html, body {
   width: 100%;
   overflow: hidden;
 }
+
+/* Add custom styling for Swagger UI */
+.swagger-ui-wrapper {
+  width: 100%;
+  background-color: #121212;
+}
+
+.swagger-ui-container.dark-theme .swagger-ui .info .title,
+.swagger-ui-container.dark-theme .swagger-ui .opblock-tag,
+.swagger-ui-container.dark-theme .swagger-ui .opblock .opblock-summary-operation-id,
+.swagger-ui-container.dark-theme .swagger-ui .opblock .opblock-summary-path,
+.swagger-ui-container.dark-theme .swagger-ui .opblock .opblock-summary-description,
+.swagger-ui-container.dark-theme .swagger-ui .opblock-description-wrapper p,
+.swagger-ui-container.dark-theme .swagger-ui .opblock-external-docs-wrapper,
+.swagger-ui-container.dark-theme .swagger-ui .opblock-title_normal,
+.swagger-ui-container.dark-theme .swagger-ui table thead tr td,
+.swagger-ui-container.dark-theme .swagger-ui table thead tr th {
+  color: #e0e0e0 !important;
+}
+
+.swagger-ui-container.dark-theme .swagger-ui .info .title,
+.swagger-ui-container.dark-theme .swagger-ui .info p,
+.swagger-ui-container.dark-theme .swagger-ui .info a,
+.swagger-ui-container.dark-theme .swagger-ui .info li {
+  color: #e0e0e0 !important;
+}
+
+.swagger-ui-container.dark-theme .swagger-ui .scheme-container {
+  background-color: #1a1a1a !important;
+  box-shadow: none !important;
+}
+
+.swagger-ui-container.dark-theme .swagger-ui select {
+  background-color: #2a2a2a !important;
+  color: #e0e0e0 !important;
+  border-color: #444 !important;
+}
+
+.swagger-ui-container.dark-theme .swagger-ui .btn {
+  color: #e0e0e0 !important;
+  background-color: #2a2a2a !important;
+  border-color: #444 !important;
+}
+
+.swagger-ui-container.dark-theme .swagger-ui .opblock.opblock-get {
+  background-color: rgba(0, 85, 170, 0.1) !important;
+  border-color: #0085aa !important;
+}
+
+.swagger-ui-container.dark-theme .swagger-ui .opblock.opblock-post {
+  background-color: rgba(73, 204, 144, 0.1) !important;
+  border-color: #49cc90 !important;
+}
+
+.swagger-ui-container.dark-theme .swagger-ui .opblock.opblock-delete {
+  background-color: rgba(249, 62, 62, 0.1) !important;
+  border-color: #f93e3e !important;
+}
+
+.swagger-ui-container.dark-theme .swagger-ui .opblock.opblock-put {
+  background-color: rgba(252, 161, 48, 0.1) !important;
+  border-color: #fca130 !important;
+}
+
+.swagger-ui-container.dark-theme .swagger-ui .response-control-media-type__accept-message,
+.swagger-ui-container.dark-theme .swagger-ui .parameter__name,
+.swagger-ui-container.dark-theme .swagger-ui .parameter__in,
+.swagger-ui-container.dark-theme .swagger-ui .parameter__type,
+.swagger-ui-container.dark-theme .swagger-ui .parameter__deprecated,
+.swagger-ui-container.dark-theme .swagger-ui .response-col_description,
+.swagger-ui-container.dark-theme .swagger-ui .model-title,
+.swagger-ui-container.dark-theme .swagger-ui .model,
+.swagger-ui-container.dark-theme .swagger-ui .renderedMarkdown p,
+.swagger-ui-container.dark-theme .swagger-ui section.models h4 {
+  color: #e0e0e0 !important;
+}
+
+.swagger-ui-container.dark-theme .swagger-ui .model-box {
+  background-color: #1e1e1e !important;
+  border-color: #444 !important;
+}
+
+.swagger-ui-container.dark-theme .swagger-ui textarea,
+.swagger-ui-container.dark-theme .swagger-ui input {
+  background-color: #2a2a2a !important;
+  color: #e0e0e0 !important;
+  border-color: #444 !important;
+}
+
+.swagger-ui-container.dark-theme .swagger-ui .highlight-code {
+  background-color: #1e1e1e !important;
+}
