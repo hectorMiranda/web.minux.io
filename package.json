@@ -60,6 +60,7 @@
     "typescript": "^5"
   },
   "overrides": {
-    "three-mesh-bvh": "^0.8.0"
+    "three-mesh-bvh": "^0.8.0",
+    "prismjs": "^1.30.0"
   }
 }
