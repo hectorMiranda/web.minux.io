@@ -34,6 +34,7 @@ const defaultMenuItems: MenuItem[] = [
     href: '/console',
     description: 'System terminal access',
     visible: true,
+    enabled: true,
   },
   {
     icon: 'Home',
@@ -41,6 +42,7 @@ const defaultMenuItems: MenuItem[] = [
     href: '/dashboard',
     description: 'System overview and status',
     visible: true,
+    enabled: true,
   },
   {
     icon: 'Cpu',
@@ -48,6 +50,7 @@ const defaultMenuItems: MenuItem[] = [
     href: '/system',
     description: 'CPU, memory, and processes',
     visible: true,
+    enabled: true,
   },
   {
     icon: 'Thermometer',
@@ -55,6 +58,7 @@ const defaultMenuItems: MenuItem[] = [
     href: '/sensors',
     description: 'Temperature and voltage monitoring',
     visible: true,
+    enabled: true,
   },
   {
     icon: 'Network',
@@ -62,6 +66,7 @@ const defaultMenuItems: MenuItem[] = [
     href: '/network',
     description: 'Network interfaces and statistics',
     visible: true,
+    enabled: true,
   },
   {
     icon: 'Wifi',
@@ -69,6 +74,7 @@ const defaultMenuItems: MenuItem[] = [
     href: '/wifi',
     description: 'Wireless network configuration',
     visible: true,
+    enabled: true,
   },
   {
     icon: 'HardDrive',
@@ -76,6 +82,7 @@ const defaultMenuItems: MenuItem[] = [
     href: '/storage',
     description: 'Disk usage and management',
     visible: true,
+    enabled: true,
   },
   {
     icon: 'Gauge',
@@ -83,6 +90,7 @@ const defaultMenuItems: MenuItem[] = [
     href: '/performance',
     description: 'System performance metrics',
     visible: true,
+    enabled: true,
   },
   {
     icon: 'Settings',
@@ -90,6 +98,7 @@ const defaultMenuItems: MenuItem[] = [
     href: '/settings',
     description: 'System configuration',
     visible: true,
+    enabled: true,
   },
   {
     icon: 'Power',
@@ -97,6 +106,7 @@ const defaultMenuItems: MenuItem[] = [
     href: '/power',
     description: 'Power management and control',
     visible: true,
+    enabled: true,
   },
   {
     icon: 'Lock',
@@ -104,6 +114,7 @@ const defaultMenuItems: MenuItem[] = [
     href: '/security',
     description: 'System security settings',
     visible: true,
+    enabled: true,
   },
   {
     icon: 'Blocks',
@@ -111,6 +122,7 @@ const defaultMenuItems: MenuItem[] = [
     href: '/blockchain',
     description: 'Blockchain-related operations',
     visible: true,
+    enabled: true,
   },
   {
     icon: 'Music',
@@ -118,6 +130,7 @@ const defaultMenuItems: MenuItem[] = [
     href: '/midi',
     description: 'Virtual MIDI keyboard and controller',
     visible: true,
+    enabled: true,
   },
   {
     icon: 'Box',
@@ -125,6 +138,7 @@ const defaultMenuItems: MenuItem[] = [
     href: '/stl-explorer',
     description: '3D STL file viewer and manager',
     visible: true,
+    enabled: true,
   },
 ];
 
@@ -171,7 +185,7 @@ export const Sidebar = () => {
 
         <div className="flex-1 overflow-y-auto scrollbar-hide">
           <div className="space-y-1 px-2">
-            {menuItems.filter(item => item.visible).map((item) => {
+            {menuItems.filter(item => item.visible && item.enabled).map((item) => {
               const isActive = pathname === item.href;
               const isHome = item.icon === 'Home';
               
