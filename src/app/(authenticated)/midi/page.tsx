@@ -5,7 +5,6 @@ import dynamic from 'next/dynamic';
 import { DraggableWindow } from '@/components/ui/DraggableWindow';
 import { DebugMessage, PracticeMode } from '@/components/midi/refactored/types';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
-import { Suspense } from 'react';
 import ClientOnly from '@/components/midi/ClientOnly';
 
 // Import components with no SSR
@@ -54,9 +53,18 @@ export default function MIDIPage() {
   const whiteKeysRef = useRef<any[]>([]);
   const blackKeysRef = useRef<any[]>([]);
   const mouse = useRef({ x: 0, y: 0 }).current;
-  const raycaster = useRef(new (require('three')).Raycaster()).current;
+  const raycaster = useRef<any>(null);
   const camera = useRef<any>(null);
   const scene = useRef<any>(null);
+
+  // Initialize Three.js objects
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      import('three').then((THREE) => {
+        raycaster.current = new THREE.Raycaster();
+      });
+    }
+  }, []);
 
   // Note handling functions
   const onNoteOn = useCallback((note: number, velocity: number) => {
@@ -262,16 +270,16 @@ export default function MIDIPage() {
 
   // Fix mouse click handling to ensure keys are properly released
   const handleClick = (event: MouseEvent) => {
-    if (!containerRef.current || !camera || !scene) return;
+    if (!containerRef.current || !camera.current || !scene.current || !raycaster.current) return;
     
     const rect = containerRef.current.getBoundingClientRect();
     mouse.x = ((event.clientX - rect.left) / containerRef.current.clientWidth) * 2 - 1;
     mouse.y = -((event.clientY - rect.top) / containerRef.current.clientHeight) * 2 + 1;
     
-    raycaster.setFromCamera(mouse, camera);
+    raycaster.current.setFromCamera(mouse, camera.current);
     
     const allKeys = [...whiteKeysRef.current, ...blackKeysRef.current];
-    const intersects = raycaster.intersectObjects(allKeys, false);
+    const intersects = raycaster.current.intersectObjects(allKeys, false);
     
     if (intersects.length > 0) {
       const keyMesh = intersects[0].object as THREE.Mesh;
@@ -432,7 +440,7 @@ export default function MIDIPage() {
                 <section>
                   <h3 className="text-white font-medium mb-1">Troubleshooting</h3>
                   <ul className="list-disc pl-5 space-y-1">
-                    <li>If your MIDI device isn't recognized, try refreshing the MIDI devices</li>
+                    <li>If your MIDI device isn&apos;t recognized, try refreshing the MIDI devices</li>
                     <li>Make sure your browser supports the Web MIDI API (Chrome recommended)</li>
                     <li>Check the Debug Console for detailed MIDI messages and errors</li>
                   </ul>

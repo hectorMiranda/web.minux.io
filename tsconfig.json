@@ -23,6 +23,7 @@
       "@/*": ["./src/*"]
     },
     "types": [
+      "node",
       "gsap",
       "three",
       "webmidi",

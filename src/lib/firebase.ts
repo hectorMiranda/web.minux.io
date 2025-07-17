@@ -1,6 +1,9 @@
-import { initializeApp, getApps } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
+'use client';
 
+import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
+import { getAuth, Auth } from 'firebase/auth';
+
+// Firebase configuration
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -11,9 +14,34 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
-// Initialize Firebase
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
-const auth = getAuth(app);
+// Validate Firebase configuration
+const isConfigValid = () => {
+  return !!(
+    firebaseConfig.apiKey &&
+    firebaseConfig.authDomain &&
+    firebaseConfig.projectId &&
+    firebaseConfig.storageBucket &&
+    firebaseConfig.messagingSenderId &&
+    firebaseConfig.appId
+  );
+};
 
-export { auth };
+// Initialize Firebase
+let app: FirebaseApp | null = null;
+let auth: Auth | null = null;
+
+if (typeof window !== 'undefined' && isConfigValid()) {
+  try {
+    app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+    auth = getAuth(app);
+  } catch (error) {
+    console.error('Firebase initialization error:', error);
+    app = null;
+    auth = null;
+  }
+} else if (typeof window !== 'undefined' && !isConfigValid()) {
+  console.warn('Firebase configuration is missing or invalid. Authentication will be disabled.');
+}
+
+export { auth, app };
 export default app;

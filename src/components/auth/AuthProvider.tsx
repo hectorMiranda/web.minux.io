@@ -26,6 +26,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const { user, loading, setUser } = useAuthStore();
 
   useEffect(() => {
+    if (!auth) {
+      console.warn('Firebase auth not initialized');
+      return;
+    }
+
     const unsubscribe = onAuthStateChanged(auth, (user: User | null) => {
       setUser(user);
     });

@@ -5,7 +5,8 @@ import {
   createUserWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
-  User
+  User,
+  Auth
 } from 'firebase/auth';
 import { auth } from './firebase';
 
@@ -28,6 +29,9 @@ export const useAuthStore = create<AuthState>()(
       loading: true,
       
       signIn: async (email: string, password: string) => {
+        if (!auth) {
+          throw new Error('Firebase authentication is not initialized');
+        }
         try {
           set({ loading: true });
           const userCredential = await signInWithEmailAndPassword(auth, email, password);
@@ -43,6 +47,9 @@ export const useAuthStore = create<AuthState>()(
       },
 
       signUp: async (email: string, password: string) => {
+        if (!auth) {
+          throw new Error('Firebase authentication is not initialized');
+        }
         try {
           set({ loading: true });
           const userCredential = await createUserWithEmailAndPassword(auth, email, password);
@@ -58,6 +65,9 @@ export const useAuthStore = create<AuthState>()(
       },
 
       signOut: async () => {
+        if (!auth) {
+          throw new Error('Firebase authentication is not initialized');
+        }
         try {
           set({ loading: true });
           await signOut(auth);
@@ -96,7 +106,7 @@ export const useAuthStore = create<AuthState>()(
 );
 
 // Initialize auth state listener
-if (typeof window !== 'undefined') {
+if (typeof window !== 'undefined' && auth) {
   onAuthStateChanged(auth, (user: User | null) => {
     useAuthStore.getState().setUser(user);
   });
