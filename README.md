@@ -34,9 +34,10 @@ git --version
    bun install
    ```
 
-3. **Set up environment variables (if needed)**
-   - Copy `.env.example` to `.env.local` if it exists
-   - Configure any required environment variables
+3. **Set up environment variables (optional)**
+   - Copy `.env.example` to `.env.local`: `cp .env.example .env.local`
+   - Edit `.env.local` and customize the values as needed
+   - The app will work without environment variables using default settings
 
 ## Getting Started
 
