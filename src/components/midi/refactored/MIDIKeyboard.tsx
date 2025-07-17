@@ -2,7 +2,7 @@
 
 import { useRef, useState, useEffect } from 'react';
 import * as THREE from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { Music, Settings, Terminal, Play, Pause, Info, Maximize, Layers } from 'lucide-react';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 
@@ -59,7 +59,7 @@ function createTextSprite(text: string, size: number, color: THREE.Color) {
 }
 
 // Helper function to create note labels
-function createNoteLabel(note: number, position: THREE.Vector3, scene: THREE.Scene) {
+function createNoteLabel(note: number, position: THREE.Vector3, parent: THREE.Group | THREE.Scene) {
   const noteIndex = note % 12;
   const octave = Math.floor(note / 12) - 1;
   const noteName = NOTE_NAMES[noteIndex];
@@ -88,7 +88,7 @@ function createNoteLabel(note: number, position: THREE.Vector3, scene: THREE.Sce
   sprite.position.y += 0.1;
   sprite.position.z -= 0.2;
   sprite.userData = { type: 'noteLabel', note };
-  scene.add(sprite);
+  parent.add(sprite);
   return sprite;
 }
 

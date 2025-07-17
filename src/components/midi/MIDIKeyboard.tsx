@@ -2,7 +2,7 @@
 
 import { useRef, useState, useEffect } from 'react';
 import * as THREE from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { Music, Settings, Terminal, Play, Pause } from 'lucide-react';
 
 interface MIDIKeyboardProps {
@@ -516,7 +516,7 @@ export default function MIDIKeyboard({
     }
     
     // Clear all active keys
-    const keysToTurnOff = [...activeKeys];
+    const keysToTurnOff = Array.from(activeKeys);
     keysToTurnOff.forEach(note => {
       if (activeKeys.has(note)) {
         handleKeyPress(note); // Toggle off

@@ -2,6 +2,8 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { AuthProvider } from '@/components/auth/AuthProvider';
+import { Toaster } from 'sonner';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -9,9 +11,15 @@ export function Providers({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Handle storage changes
     const handleStorageChange = (e: StorageEvent) => {
-      // If isAuthenticated was removed or changed
-      if (e.key === 'isAuthenticated') {
-        if (!e.newValue || e.newValue === 'false') {
+      // If auth storage was changed
+      if (e.key === 'auth-storage') {
+        try {
+          const authData = e.newValue ? JSON.parse(e.newValue) : null;
+          if (!authData?.state?.isAuthenticated) {
+            router.push('/');
+          }
+        } catch (error) {
+          console.error('Error parsing auth storage:', error);
           router.push('/');
         }
       }
@@ -20,15 +28,25 @@ export function Providers({ children }: { children: React.ReactNode }) {
     // Listen for storage events (works across tabs)
     window.addEventListener('storage', handleStorageChange);
 
-    // Check if already authenticated
-    if (!localStorage.getItem('isAuthenticated')) {
-      router.push('/');
-    }
-
     return () => {
       window.removeEventListener('storage', handleStorageChange);
     };
   }, [router]);
 
-  return <>{children}</>;
+  return (
+    <AuthProvider>
+      <Toaster 
+        theme="dark" 
+        position="top-right"
+        toastOptions={{
+          style: {
+            background: '#0A192F',
+            border: '1px solid rgba(0, 255, 255, 0.3)',
+            color: '#00FFFF',
+          },
+        }}
+      />
+      {children}
+    </AuthProvider>
+  );
 } 

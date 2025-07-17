@@ -48,13 +48,37 @@ export default function MIDIPage() {
   const [expectedNotes, setExpectedNotes] = useState<number[]>([]);
   const [currentExerciseMode, setCurrentExerciseMode] = useState<PracticeMode | null>(null);
   const [debugMessages, setDebugMessages] = useState<DebugMessage[]>([]);
+  
+  // Three.js refs and variables for 3D interaction
+  const containerRef = useRef<HTMLDivElement>(null);
+  const whiteKeysRef = useRef<any[]>([]);
+  const blackKeysRef = useRef<any[]>([]);
+  const mouse = useRef({ x: 0, y: 0 }).current;
+  const raycaster = useRef(new (require('three')).Raycaster()).current;
+  const camera = useRef<any>(null);
+  const scene = useRef<any>(null);
 
-  // Add debug message helper
-  const addDebugMessage = useCallback((message: string, type: 'info' | 'error' | 'midi' = 'info') => {
+  // Note handling functions
+  const onNoteOn = useCallback((note: number, velocity: number) => {
+    setActiveNotes(prev => new Set([...prev, note]));
+    addDebugMessage(`Note ON: ${note} (velocity: ${velocity})`, 'info');
+  }, []);
+
+  const onNoteOff = useCallback((note: number) => {
+    setActiveNotes(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(note);
+      return newSet;
+    });
+    addDebugMessage(`Note OFF: ${note}`, 'info');
+  }, []);
+
+  // Debug message function
+  const addDebugMessage = useCallback((message: string, type: 'info' | 'error' | 'midi') => {
     setDebugMessages(prev => [...prev, {
       timestamp: new Date(),
-      type,
-      message
+      message,
+      type
     }]);
   }, []);
 
@@ -70,7 +94,8 @@ export default function MIDIPage() {
     
     // Add MIDI message handler
     input.onmidimessage = (event) => {
-      const [status, note, velocity] = event.data;
+      const data = Array.from(event.data);
+      const [status, note, velocity] = data;
       const command = status & 0xF0;
       
       console.log('MIDI Message:', { command, note, velocity }); // Debug logging
@@ -294,7 +319,7 @@ export default function MIDIPage() {
             onNoteOff={handleNoteOff}
             activeNotes={activeNotes}
             showDebug={showDebug}
-            exerciseMode={currentExerciseMode}
+            exerciseMode={currentExerciseMode || undefined}
             expectedNotes={expectedNotes}
           />
         </ClientOnly>
@@ -315,7 +340,7 @@ export default function MIDIPage() {
         {showSettings && (
           <DraggableWindow
             title="Keyboard Settings"
-            initialPosition={{ x: 100, y: 100 }}
+            defaultPosition={{ x: 100, y: 100 }}
             onClose={toggleSettings}
           >
             <div className="p-4 w-80">
@@ -362,7 +387,7 @@ export default function MIDIPage() {
         {showDebug && (
           <DraggableWindow
             title="Debug Console"
-            initialPosition={{ x: window.innerWidth - 520, y: 100 }}
+            defaultPosition={{ x: typeof window !== 'undefined' ? window.innerWidth - 520 : 300, y: 100 }}
             onClose={toggleDebug}
           >
             <DebugConsole
@@ -376,7 +401,7 @@ export default function MIDIPage() {
         {showHelp && (
           <DraggableWindow
             title="Help & Documentation"
-            initialPosition={{ x: window.innerWidth / 2 - 250, y: 100 }}
+            defaultPosition={{ x: typeof window !== 'undefined' ? window.innerWidth / 2 - 250 : 200, y: 100 }}
             onClose={toggleHelp}
           >
             <div className="p-4 w-[500px] max-h-[400px] overflow-y-auto">
@@ -419,4 +444,4 @@ export default function MIDIPage() {
       </div>
     </div>
   );
-} 
+}

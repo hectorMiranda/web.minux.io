@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Trash2 } from 'lucide-react';
-import { STLLoader } from 'three/examples/jsm/loaders/STLLoader';
+import { STLLoader } from 'three/addons/loaders/STLLoader.js';
 import * as THREE from 'three';
 import ThreeRenderer from './ThreeRenderer';
 import type { ModelData } from '../lib/storage';

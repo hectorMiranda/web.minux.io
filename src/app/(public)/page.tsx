@@ -5,8 +5,8 @@ import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/auth';
 import { FeaturesSection } from '@/components/FeaturesSection';
-import { Terminal, Github, Globe, Monitor, Bot } from 'lucide-react';
-import { PasswordDialog } from '@/components/auth/PasswordDialog';
+import { Terminal, Github, Globe, Monitor, Bot, LogOut, User } from 'lucide-react';
+import { FirebaseAuthDialog } from '@/components/auth/FirebaseAuthDialog';
 
 const MINUX_REPOS = [
   {
@@ -41,9 +41,9 @@ const MINUX_REPOS = [
 
 export default function LandingPage() {
   const router = useRouter();
-  const { isAuthenticated, setAuthenticated } = useAuthStore();
+  const { user, isAuthenticated, signOut } = useAuthStore();
   const [mounted, setMounted] = useState(false);
-  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  const [showAuthDialog, setShowAuthDialog] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -55,15 +55,12 @@ export default function LandingPage() {
     }
   }, [isAuthenticated, router]);
 
-  const handleAuthentication = (password: string) => {
-    if (password === process.env.NEXT_PUBLIC_SYSTEM_PASSWORD) {
-      setAuthenticated(true);
-      setShowPasswordDialog(false);
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Sign out error:', error);
     }
-  };
-
-  const handleCloseDialog = () => {
-    setShowPasswordDialog(false);
   };
 
   if (!mounted) return null;
@@ -91,12 +88,28 @@ export default function LandingPage() {
                 <Github className="w-4 h-4" />
                 <span>GitHub</span>
               </motion.a>
-              <button
-                onClick={() => setShowPasswordDialog(true)}
-                className="px-4 py-2 rounded-lg bg-primary/20 text-primary border border-primary/20 hover:bg-primary/30 transition-colors"
-              >
-                Login
-              </button>
+              {isAuthenticated ? (
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 text-sm text-primary">
+                    <User className="w-4 h-4" />
+                    <span>{user?.email}</span>
+                  </div>
+                  <button
+                    onClick={handleSignOut}
+                    className="px-4 py-2 rounded-lg bg-red-500/20 text-red-400 border border-red-500/20 hover:bg-red-500/30 transition-colors flex items-center gap-2"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    Sign Out
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setShowAuthDialog(true)}
+                  className="px-4 py-2 rounded-lg bg-primary/20 text-primary border border-primary/20 hover:bg-primary/30 transition-colors"
+                >
+                  Sign In
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -128,7 +141,7 @@ export default function LandingPage() {
               className="flex items-center justify-center gap-4"
             >
               <button
-                onClick={() => setShowPasswordDialog(true)}
+                onClick={() => setShowAuthDialog(true)}
                 className="px-8 py-3 rounded-lg bg-primary text-black font-medium hover:bg-primary/90 transition-colors"
               >
                 Get Started
@@ -241,10 +254,9 @@ export default function LandingPage() {
       </footer>
 
       {/* Auth Dialog */}
-      {showPasswordDialog && (
-        <PasswordDialog 
-          onAuthenticate={handleAuthentication}
-          onClose={handleCloseDialog}
+      {showAuthDialog && (
+        <FirebaseAuthDialog 
+          onClose={() => setShowAuthDialog(false)}
         />
       )}
     </div>

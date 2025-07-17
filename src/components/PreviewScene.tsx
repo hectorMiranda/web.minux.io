@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useThree } from '@react-three/fiber';
-import { OrbitControls, Grid, Environment } from '@react-three/drei';
+import { OrbitControls } from '@react-three/drei';
 
 interface PreviewSceneProps {
   geometry: THREE.BufferGeometry;
@@ -28,8 +28,9 @@ function Scene({ geometry }: PreviewSceneProps) {
           envMapIntensity={1}
         />
       </mesh>
-      <Grid infiniteGrid fadeDistance={20} fadeStrength={5} />
-      <Environment preset="studio" />
+      {/* Grid and Environment removed - not available in current drei version */}
+      <ambientLight intensity={0.5} />
+      <directionalLight position={[10, 10, 5]} intensity={1} />
     </>
   );
 }

@@ -34,10 +34,32 @@ git --version
    bun install
    ```
 
-3. **Set up environment variables (optional)**
+3. **Set up Firebase Authentication**
+   
+   **a. Create a Firebase Project:**
+   - Go to [Firebase Console](https://console.firebase.google.com/)
+   - Click "Create a project" and follow the setup wizard
+   - Enable Firebase Authentication in your project
+   - Configure sign-in methods (Email/Password is recommended)
+   
+   **b. Get Firebase Configuration:**
+   - In Firebase Console, go to Project Settings > General
+   - Scroll down to "Your apps" and click "Add app" (Web icon)
+   - Register your app and copy the Firebase config object
+   
+   **c. Configure Environment Variables:**
    - Copy `.env.example` to `.env.local`: `cp .env.example .env.local`
-   - Edit `.env.local` and customize the values as needed
-   - The app will work without environment variables using default settings
+   - Edit `.env.local` and add your Firebase configuration:
+   ```env
+   NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key_here
+   NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project_id.firebaseapp.com
+   NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
+   NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project_id.appspot.com
+   NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+   NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
+   ```
+   
+   **Note:** The application requires Firebase Authentication to access protected features. Without proper configuration, authentication will not work.
 
 ## Getting Started
 
@@ -78,7 +100,7 @@ This project includes several advanced features:
 - **MIDI Support**: Interactive MIDI keyboard and Mozart piece player
 - **Dashboard System**: System monitoring and management interface
 - **API Documentation**: Swagger/OpenAPI documentation
-- **Authentication**: Secure access to authenticated routes
+- **Authentication**: Firebase Authentication with email/password sign-in/sign-up
 - **File Management**: STL file explorer and storage management
 
 ## Troubleshooting
@@ -89,6 +111,11 @@ This project includes several advanced features:
 2. **Node version issues**: Make sure you're using Node.js 20+ (check with `node --version`)
 3. **Package installation fails**: Try deleting `node_modules` and `package-lock.json`, then run `npm install` again
 4. **Build errors**: Run `npm run check` to see TypeScript and linting issues
+5. **Firebase Authentication not working**: 
+   - Verify your Firebase configuration in `.env.local`
+   - Check that Email/Password authentication is enabled in Firebase Console
+   - Ensure your domain is added to authorized domains in Firebase Authentication settings
+   - Check browser console for detailed Firebase error messages
 
 **Performance Tips:**
 - For better 3D performance, ensure hardware acceleration is enabled in your browser

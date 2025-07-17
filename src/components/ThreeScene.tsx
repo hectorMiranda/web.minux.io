@@ -2,7 +2,7 @@
 
 import React, { useRef, useEffect } from 'react';
 import { useThree } from '@react-three/fiber';
-import { OrbitControls, Grid, Environment } from '@react-three/drei';
+import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 
 interface ThreeSceneProps {
@@ -19,7 +19,7 @@ function Scene({ geometry }: ThreeSceneProps) {
       geometry.computeBoundingSphere();
       const { radius, center } = geometry.boundingSphere!;
       
-      const distance = (radius * 3.5) / Math.tan((camera.fov / 2) * Math.PI / 180);
+      const distance = (radius * 3.5) / Math.tan(((camera as THREE.PerspectiveCamera).fov / 2) * Math.PI / 180);
       
       const controls = orbitControlsRef.current;
       controls.target.copy(center);
@@ -31,7 +31,6 @@ function Scene({ geometry }: ThreeSceneProps) {
   return (
     <>
       <OrbitControls 
-        ref={orbitControlsRef}
         enableDamping 
         dampingFactor={0.05}
         makeDefault
@@ -46,8 +45,8 @@ function Scene({ geometry }: ThreeSceneProps) {
           envMapIntensity={1}
         />
       </mesh>
-      <Grid infiniteGrid fadeDistance={30} fadeStrength={5} />
-      <Environment preset="studio" />
+      {/* Grid and Environment removed - not available in current drei version */}
+      <directionalLight position={[5, 5, 5]} intensity={1} />
     </>
   );
 }

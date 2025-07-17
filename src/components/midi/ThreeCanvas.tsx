@@ -4,15 +4,7 @@ import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useMIDI } from './MIDIProvider';
 
-const ThreeScene = dynamic(() => 
-  import('./ThreeScene').then(mod => {
-    return new Promise(resolve => {
-      // Ensure React is fully initialized
-      setTimeout(() => resolve(mod.default), 100);
-    });
-  }), 
-  { ssr: false }
-);
+const ThreeScene = dynamic(() => import('./ThreeScene'), { ssr: false });
 
 interface ThreeCanvasProps {
   activeKeys: Set<number>;

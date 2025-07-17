@@ -4,7 +4,8 @@ interface TimingOptions {
   bpm: number;
 }
 
-export function useMIDITiming({ bpm = 120 }: TimingOptions = {}) {
+export function useMIDITiming(options: TimingOptions = { bpm: 120 }) {
+  const { bpm = 120 } = options;
   const [isPlaying, setIsPlaying] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [currentBeat, setCurrentBeat] = useState(0);

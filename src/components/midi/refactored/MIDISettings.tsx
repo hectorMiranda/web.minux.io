@@ -30,7 +30,7 @@ const MIDISettings: React.FC<MIDISettingsProps> = ({
             value={selectedInput?.id || ''}
           >
             <option value="">No Input</option>
-            {Array.from(midiAccess.inputs.values()).map((input) => (
+            {midiAccess && Array.from(midiAccess.inputs.values()).map((input) => (
               <option key={input.id} value={input.id}>
                 {input.name || input.id}
               </option>
@@ -51,7 +51,7 @@ const MIDISettings: React.FC<MIDISettingsProps> = ({
             value={selectedOutput?.id || ''}
           >
             <option value="">No Output</option>
-            {Array.from(midiAccess.outputs.values()).map((output) => (
+            {midiAccess && Array.from(midiAccess.outputs.values()).map((output) => (
               <option key={output.id} value={output.id}>
                 {output.name || output.id}
               </option>

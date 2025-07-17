@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Upload, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
-import { STLLoader } from 'three/examples/jsm/loaders/STLLoader';
+import { STLLoader } from 'three/addons/loaders/STLLoader.js';
 import * as THREE from 'three';
 import { Button } from '@/components/ui/button';
 import ModelViewer from '@/components/ModelViewer';
@@ -64,9 +64,9 @@ export default function STLExplorer() {
         name: file.name,
         base64: `data:model/stl;base64,${base64}`,
         dimensions: {
-          width: geometry.boundingSphere!.radius * 2,
-          height: geometry.boundingSphere!.radius * 2,
-          depth: geometry.boundingSphere!.radius * 2
+          x: geometry.boundingSphere!.radius * 2,
+          y: geometry.boundingSphere!.radius * 2,
+          z: geometry.boundingSphere!.radius * 2
         }
       };
 
