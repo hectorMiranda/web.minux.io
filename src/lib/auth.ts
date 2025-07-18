@@ -3,6 +3,8 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import { 
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword,
+  signInWithPopup,
+  GoogleAuthProvider,
   signOut,
   onAuthStateChanged,
   User,
@@ -16,6 +18,7 @@ interface AuthState {
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
   setUser: (user: User | null) => void;
   setLoading: (loading: boolean) => void;
@@ -53,6 +56,27 @@ export const useAuthStore = create<AuthState>()(
         try {
           set({ loading: true });
           const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+          set({ 
+            user: userCredential.user, 
+            isAuthenticated: true, 
+            loading: false 
+          });
+        } catch (error) {
+          set({ loading: false });
+          throw error;
+        }
+      },
+
+      signInWithGoogle: async () => {
+        if (!auth) {
+          throw new Error('Firebase authentication is not initialized');
+        }
+        try {
+          set({ loading: true });
+          const provider = new GoogleAuthProvider();
+          provider.addScope('email');
+          provider.addScope('profile');
+          const userCredential = await signInWithPopup(auth, provider);
           set({ 
             user: userCredential.user, 
             isAuthenticated: true, 
