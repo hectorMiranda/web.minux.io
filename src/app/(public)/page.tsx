@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/auth';
@@ -11,6 +11,7 @@ import {
   Code, Layers, Box, Brain, Sparkles, Menu
 } from 'lucide-react';
 import { FirebaseAuthDialog } from '@/components/auth/FirebaseAuthDialog';
+import { Background3D } from '@/components/Background3D';
 import { MobileMenu } from '@/components/MobileMenu';
 
 const MINUX_REPOS = [
@@ -109,12 +110,19 @@ export default function LandingPage() {
   useEffect(() => {
     setMounted(true);
     
+    // Force scroll behavior
+    document.documentElement.style.scrollBehavior = 'smooth';
+    document.body.style.overflowY = 'auto';
+    document.body.style.touchAction = 'pan-y';
+    
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 50);
     };
     
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
   }, []);
 
   useEffect(() => {
@@ -134,36 +142,55 @@ export default function LandingPage() {
   if (!mounted) return null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-black text-white overflow-x-hidden">
-      {/* Animated CSS Background */}
-      <div className="fixed inset-0 -z-10">
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-slate-900 to-black">
-          <div className="absolute inset-0 opacity-30">
-            {[...Array(30)].map((_, i) => (
-              <motion.div
-                key={i}
-                className="absolute w-1 h-1 bg-cyan-400/40 rounded-full"
-                animate={{
-                  x: [0, Math.random() * 100 - 50],
-                  y: [0, Math.random() * 100 - 50],
-                  opacity: [0, 1, 0],
-                  scale: [0, 1, 0]
-                }}
-                transition={{
-                  duration: Math.random() * 4 + 3,
-                  repeat: Infinity,
-                  delay: Math.random() * 2,
-                }}
-                style={{
-                  left: `${Math.random() * 100}%`,
-                  top: `${Math.random() * 100}%`,
-                }}
-              />
-            ))}
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-black text-white overflow-x-hidden relative">
+      {/* 3D Background */}
+      <Suspense fallback={
+        <div 
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            zIndex: -10,
+            pointerEvents: 'none',
+            touchAction: 'none'
+          }}
+        >
+          <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-slate-900 to-black">
+            <div className="absolute inset-0 opacity-30">
+              {[...Array(20)].map((_, i) => (
+                <motion.div
+                  key={i}
+                  className="absolute w-1 h-1 bg-cyan-400/40 rounded-full"
+                  animate={{
+                    x: [0, Math.random() * 100 - 50],
+                    y: [0, Math.random() * 100 - 50],
+                    opacity: [0, 1, 0],
+                    scale: [0, 1, 0]
+                  }}
+                  transition={{
+                    duration: Math.random() * 4 + 3,
+                    repeat: Infinity,
+                    delay: Math.random() * 2,
+                  }}
+                  style={{
+                    left: `${Math.random() * 100}%`,
+                    top: `${Math.random() * 100}%`,
+                    pointerEvents: 'none',
+                    touchAction: 'none'
+                  }}
+                />
+              ))}
+            </div>
           </div>
         </div>
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/50 via-transparent to-slate-950/30 pointer-events-none" />
-      </div>
+      }>
+        <Background3D />
+      </Suspense>
+
+      {/* Main Content - Scrollable */}
+      <div className="page-content relative z-10" style={{ pointerEvents: 'auto', touchAction: 'auto' }}>
 
       {/* Navigation */}
       <motion.nav 
@@ -706,6 +733,8 @@ export default function LandingPage() {
           />
         )}
       </AnimatePresence>
+      
+      </div> {/* End page-content */}
     </div>
   );
 } 
