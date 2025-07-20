@@ -9,6 +9,17 @@ const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jet
 export const metadata: Metadata = {
   title: "Minux - The Modular OS for Machines",
   description: "Built by marcetux - for makers, robots, and rebels",
+  viewport: "width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+  },
+  formatDetection: {
+    telephone: false,
+  },
+  other: {
+    'mobile-web-app-capable': 'yes',
+  },
 };
 
 export default function RootLayout({

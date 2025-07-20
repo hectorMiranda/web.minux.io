@@ -29,9 +29,12 @@ export const ThemeToggle = () => {
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/5 transition-colors"
+        className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2 rounded-lg hover:bg-white/5 transition-colors"
+        aria-label="Theme settings"
       >
-        {currentTheme?.icon}
+        <span className="hidden sm:inline">
+          {currentTheme?.icon}
+        </span>
         <Palette 
           className="w-4 h-4" 
           style={{ color: currentColor?.color }}

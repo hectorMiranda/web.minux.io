@@ -13,15 +13,15 @@ export const Dashboard = () => {
   });
 
   return (
-    <div className="min-h-screen bg-black text-white p-6">
+    <div className="min-h-screen bg-black text-white p-3 sm:p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <header className="flex items-center justify-between mb-8">
-          <div>
+        <header className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 sm:mb-8 gap-4">
+          <div className="min-w-0">
             <motion.h1 
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="text-2xl font-bold text-primary"
+              className="text-xl sm:text-2xl font-bold text-primary truncate"
             >
               System Overview
             </motion.h1>
@@ -39,15 +39,15 @@ export const Dashboard = () => {
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="text-right"
+            className="text-right flex-shrink-0"
           >
-            <div className="text-3xl font-mono text-primary">{currentTime}</div>
+            <div className="text-2xl sm:text-3xl font-mono text-primary">{currentTime}</div>
             <div className="text-sm text-gray-400">{currentDate}</div>
           </motion.div>
         </header>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
           <StatCard
             title="CPU Usage"
             value="51%"

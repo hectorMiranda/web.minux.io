@@ -146,7 +146,7 @@ export const Sidebar = () => {
   const pathname = usePathname();
   const router = useRouter();
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
-  const [isExpanded, setIsExpanded] = useState(true); // Default to expanded
+  const [isExpanded, setIsExpanded] = useState(true); // Default to expanded on desktop
   const { menuItems: savedMenuItems, homePage } = useSettingsStore();
   const [menuItems, setLocalMenuItems] = useState<MenuItem[]>(defaultMenuItems);
 

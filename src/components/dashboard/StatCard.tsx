@@ -31,21 +31,21 @@ export const StatCard = ({
 
   return (
     <motion.div 
-      className="p-4 rounded-xl bg-white/5 border border-white/10"
+      className="p-3 sm:p-4 rounded-xl bg-white/5 border border-white/10"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
     >
       <div className="flex items-center justify-between mb-2">
-        <span className="text-white/50">{title}</span>
-        <div className={`text-${color}/80`}>{icon}</div>
+        <span className="text-sm text-white/50 truncate">{title}</span>
+        <div className={`text-${color}/80 flex-shrink-0`}>{icon}</div>
       </div>
-      <div className="text-2xl font-semibold mb-1">{value}</div>
-      {subValue && <div className="text-sm text-white/50 mb-2">{subValue}</div>}
+      <div className="text-xl sm:text-2xl font-semibold mb-1 truncate">{value}</div>
+      {subValue && <div className="text-xs sm:text-sm text-white/50 mb-2 truncate">{subValue}</div>}
       
       {chart.length > 0 && (
         <div className="flex items-end gap-2 mb-2">
-          <div className="flex-1 h-12 flex items-end gap-1">
+          <div className="flex-1 h-8 sm:h-12 flex items-end gap-1">
             {chart.map((value, index) => {
               const height = ((value - min) / range) * 100;
               return (
