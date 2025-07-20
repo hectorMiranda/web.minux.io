@@ -10,12 +10,14 @@ interface AppLayoutProps {
 
 export const AppLayout = ({ children }: AppLayoutProps) => {
   return (
-    <div className="flex h-screen bg-[#1E1E1E]">
+    <div className="flex h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
       <Sidebar />
       <div className="flex-1 flex flex-col">
         <TopNav />
-        <main className="flex-1 overflow-auto bg-[#1E1E1E] p-4">
-          {children}
+        <main className="flex-1 overflow-auto bg-gradient-to-br from-slate-950/90 via-slate-900/50 to-slate-950/90 p-6">
+          <div className="max-w-7xl mx-auto">
+            {children}
+          </div>
         </main>
       </div>
     </div>

@@ -204,7 +204,9 @@ export default function LandingPage() {
       {/* Navigation */}
       <motion.nav 
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-          isScrolled ? 'bg-slate-950/80 backdrop-blur-xl border-b border-white/10' : 'bg-transparent'
+          isScrolled 
+            ? 'bg-slate-950/95 backdrop-blur-xl border-b border-cyan-500/20 shadow-lg shadow-cyan-500/10' 
+            : 'bg-gradient-to-b from-slate-950/80 via-slate-950/40 to-transparent backdrop-blur-sm'
         }`}
         initial={{ y: -100 }}
         animate={{ y: 0 }}

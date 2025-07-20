@@ -42,22 +42,45 @@ body, html {
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: rgba(0, 255, 136, 0.1);
+  background: rgba(34, 211, 238, 0.1);
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(0, 255, 136, 0.3);
+  background: rgba(34, 211, 238, 0.3);
   border-radius: 4px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 255, 136, 0.4);
+  background: rgba(34, 211, 238, 0.4);
 }
 
 /* Hide default scrollbar for Firefox */
 .custom-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: rgba(0, 255, 136, 0.3) rgba(0, 255, 136, 0.1);
+  scrollbar-color: rgba(34, 211, 238, 0.3) rgba(34, 211, 238, 0.1);
+}
+
+/* Better scrollbars for sidebar */
+.scrollbar-hide::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollbar-hide::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-hide::-webkit-scrollbar-thumb {
+  background: rgba(34, 211, 238, 0.2);
+  border-radius: 3px;
+}
+
+.scrollbar-hide::-webkit-scrollbar-thumb:hover {
+  background: rgba(34, 211, 238, 0.4);
+}
+
+.scrollbar-hide {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(34, 211, 238, 0.2) transparent;
 }
 
 /* Modern smooth scrolling */
