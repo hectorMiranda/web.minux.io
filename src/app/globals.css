@@ -83,6 +83,85 @@ body, html {
   scrollbar-color: rgba(34, 211, 238, 0.2) transparent;
 }
 
+/* Custom scrollbar for mobile menu */
+.scrollbar-thin {
+  scrollbar-width: thin;
+}
+
+.scrollbar-thumb-cyan-500\/30::-webkit-scrollbar-thumb {
+  background-color: rgba(6, 182, 212, 0.3);
+  border-radius: 4px;
+}
+
+.scrollbar-track-slate-800\/30::-webkit-scrollbar-track {
+  background-color: rgba(30, 41, 59, 0.3);
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: rgba(30, 41, 59, 0.3);
+  border-radius: 3px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgba(6, 182, 212, 0.3);
+  border-radius: 3px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: rgba(6, 182, 212, 0.5);
+}
+
+/* Enhanced scrollbar for mobile navigation */
+.mobile-nav-scroll {
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(6, 182, 212, 0.3) rgba(30, 41, 59, 0.3);
+  overscroll-behavior: contain;
+}
+
+.mobile-nav-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.mobile-nav-scroll::-webkit-scrollbar-track {
+  background: rgba(30, 41, 59, 0.3);
+  border-radius: 3px;
+}
+
+.mobile-nav-scroll::-webkit-scrollbar-thumb {
+  background: rgba(6, 182, 212, 0.3);
+  border-radius: 3px;
+  border: 1px solid rgba(30, 41, 59, 0.5);
+}
+
+.mobile-nav-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(6, 182, 212, 0.5);
+}
+
+.mobile-nav-scroll::-webkit-scrollbar-thumb:active {
+  background: rgba(6, 182, 212, 0.7);
+}
+
+/* Ensure proper touch scrolling */
+@media (max-width: 1023px) {
+  .mobile-nav-scroll {
+    touch-action: pan-y;
+  }
+}
+
+/* Line clamp utility */
+.line-clamp-1 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
+}
+
 /* Modern smooth scrolling */
 html {
   scroll-behavior: smooth;

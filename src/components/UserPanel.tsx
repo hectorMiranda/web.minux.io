@@ -36,16 +36,16 @@ export const UserPanel = () => {
   const photoURL = user?.photoURL;
 
   return (
-    <div className="relative">
+    <div className="relative w-full h-full">
       <motion.button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 sm:gap-3 px-2 sm:px-4 py-2 rounded-xl bg-gradient-to-r from-slate-800/50 to-slate-700/50 hover:from-cyan-500/10 hover:to-blue-500/10 border border-slate-700/50 hover:border-cyan-500/30 transition-all duration-200 group"
+        className="flex items-center justify-center w-full h-full transition-all duration-200 group"
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         aria-label="User menu"
       >
         {/* Profile Picture or Icon */}
-        <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg overflow-hidden bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center text-white shadow-lg shadow-cyan-500/40">
+        <div className="w-6 h-6 rounded-lg overflow-hidden bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center text-white shadow-lg shadow-cyan-500/40">
           {photoURL ? (
             <img
               src={photoURL}
@@ -58,11 +58,8 @@ export const UserPanel = () => {
               }}
             />
           ) : null}
-          <User className={`w-3 h-3 sm:w-4 sm:h-4 ${photoURL ? 'hidden' : ''}`} />
+          <User className={`w-3 h-3 ${photoURL ? 'hidden' : ''}`} />
         </div>
-        <span className="hidden sm:inline text-sm font-medium text-slate-300 group-hover:text-white transition-colors truncate max-w-24">
-          {displayName}
-        </span>
       </motion.button>
 
       <AnimatePresence>

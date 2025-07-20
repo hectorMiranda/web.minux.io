@@ -26,15 +26,12 @@ export const ThemeToggle = () => {
   const currentColor = colorSchemes.find(c => c.value === colorScheme);
 
   return (
-    <div className="relative">
+    <div className="relative w-full h-full">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2 rounded-lg hover:bg-white/5 transition-colors"
+        className="flex items-center justify-center w-full h-full transition-colors"
         aria-label="Theme settings"
       >
-        <span className="hidden sm:inline">
-          {currentTheme?.icon}
-        </span>
         <Palette 
           className="w-4 h-4" 
           style={{ color: currentColor?.color }}
