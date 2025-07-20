@@ -109,6 +109,13 @@ export const FirebaseAuthDialog = ({ onClose }: FirebaseAuthDialogProps) => {
       let errorMessage = 'An error occurred';
       
       switch (error?.code) {
+        case 'auth/unauthorized-domain':
+          if (process.env.NODE_ENV === 'development') {
+            errorMessage = 'Development setup needed: Add localhost to Firebase authorized domains in the console';
+          } else {
+            errorMessage = 'Domain not authorized for authentication';
+          }
+          break;
         case 'auth/user-not-found':
         case 'auth/wrong-password':
           errorMessage = 'Invalid email or password';
@@ -143,6 +150,13 @@ export const FirebaseAuthDialog = ({ onClose }: FirebaseAuthDialogProps) => {
       let errorMessage = 'Google sign-in failed';
       
       switch (error?.code) {
+        case 'auth/unauthorized-domain':
+          if (process.env.NODE_ENV === 'development') {
+            errorMessage = 'Development setup needed: Add localhost to Firebase authorized domains in the console';
+          } else {
+            errorMessage = 'Domain not authorized for authentication';
+          }
+          break;
         case 'auth/popup-blocked':
           errorMessage = 'Popup was blocked. Please allow popups for this site.';
           break;

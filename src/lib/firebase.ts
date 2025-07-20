@@ -43,5 +43,16 @@ if (typeof window !== 'undefined' && isConfigValid()) {
   console.warn('Firebase configuration is missing or invalid. Authentication will be disabled.');
 }
 
+// Debug Firebase configuration in production
+if (typeof window !== 'undefined') {
+  console.log('Firebase Config Debug:', {
+    currentDomain: window.location.hostname,
+    authDomain: firebaseConfig.authDomain,
+    projectId: firebaseConfig.projectId,
+    isConfigValid: isConfigValid(),
+    nodeEnv: process.env.NODE_ENV
+  });
+}
+
 export { auth, app };
 export default app;

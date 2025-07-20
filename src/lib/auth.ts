@@ -43,8 +43,22 @@ export const useAuthStore = create<AuthState>()(
             isAuthenticated: true, 
             loading: false 
           });
-        } catch (error) {
+        } catch (error: any) {
           set({ loading: false });
+          
+          // Handle unauthorized domain error in development
+          if (error?.code === 'auth/unauthorized-domain') {
+            const isDev = process.env.NODE_ENV === 'development';
+            const currentDomain = typeof window !== 'undefined' ? window.location.hostname : 'unknown';
+            
+            if (isDev) {
+              console.error(`Firebase unauthorized domain error in development. Please add '${currentDomain}' to your Firebase project's authorized domains.`);
+              console.error('Go to Firebase Console > Authentication > Settings > Authorized domains and add:', currentDomain);
+            }
+            
+            throw new Error(`Authentication unavailable: Please add ${currentDomain} to Firebase authorized domains`);
+          }
+          
           throw error;
         }
       },
@@ -61,8 +75,21 @@ export const useAuthStore = create<AuthState>()(
             isAuthenticated: true, 
             loading: false 
           });
-        } catch (error) {
+        } catch (error: any) {
           set({ loading: false });
+          
+          // Handle unauthorized domain error in development
+          if (error?.code === 'auth/unauthorized-domain') {
+            const isDev = process.env.NODE_ENV === 'development';
+            const currentDomain = typeof window !== 'undefined' ? window.location.hostname : 'unknown';
+            
+            if (isDev) {
+              console.error(`Firebase unauthorized domain error in development. Please add '${currentDomain}' to your Firebase project's authorized domains.`);
+            }
+            
+            throw new Error(`Authentication unavailable: Please add ${currentDomain} to Firebase authorized domains`);
+          }
+          
           throw error;
         }
       },
@@ -82,8 +109,21 @@ export const useAuthStore = create<AuthState>()(
             isAuthenticated: true, 
             loading: false 
           });
-        } catch (error) {
+        } catch (error: any) {
           set({ loading: false });
+          
+          // Handle unauthorized domain error in development
+          if (error?.code === 'auth/unauthorized-domain') {
+            const isDev = process.env.NODE_ENV === 'development';
+            const currentDomain = typeof window !== 'undefined' ? window.location.hostname : 'unknown';
+            
+            if (isDev) {
+              console.error(`Firebase unauthorized domain error in development. Please add '${currentDomain}' to your Firebase project's authorized domains.`);
+            }
+            
+            throw new Error(`Authentication unavailable: Please add ${currentDomain} to Firebase authorized domains`);
+          }
+          
           throw error;
         }
       },

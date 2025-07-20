@@ -190,7 +190,16 @@ export default function LandingPage() {
       </Suspense>
 
       {/* Main Content - Scrollable */}
-      <div className="page-content relative z-10" style={{ pointerEvents: 'auto', touchAction: 'auto' }}>
+      <div 
+        className="page-content relative z-10" 
+        style={{ 
+          pointerEvents: 'auto', 
+          touchAction: 'auto',
+          position: 'relative',
+          minHeight: '100vh',
+          width: '100%'
+        }}
+      >
 
       {/* Navigation */}
       <motion.nav 
