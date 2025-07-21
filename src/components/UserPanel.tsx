@@ -36,12 +36,10 @@ export const UserPanel = () => {
   const photoURL = user?.photoURL;
 
   return (
-    <div className="relative w-full h-full">
-      <motion.button
+    <div className="relative">
+      <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-center w-full h-full transition-all duration-200 group"
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
+        className="flex items-center justify-center w-6 h-6 transition-all duration-200 group"
         aria-label="User menu"
       >
         {/* Profile Picture or Icon */}
@@ -60,7 +58,7 @@ export const UserPanel = () => {
           ) : null}
           <User className={`w-3 h-3 ${photoURL ? 'hidden' : ''}`} />
         </div>
-      </motion.button>
+      </button>
 
       <AnimatePresence>
         {isOpen && (

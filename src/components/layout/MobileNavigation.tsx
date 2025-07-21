@@ -175,17 +175,17 @@ export const MobileNavigation = ({ isOpen, onToggle }: MobileNavigationProps) =>
 
   return (
     <>
-      {/* Mobile Menu Button - Integrated into top bar */}
+      {/* Mobile Menu Button - Perfectly aligned with main header */}
       <motion.button
         onClick={onToggle}
-        className="fixed top-7 left-4 z-50 lg:hidden w-10 h-6 rounded-md bg-gradient-to-br from-slate-800/90 via-slate-700/90 to-slate-800/90 border border-cyan-500/40 backdrop-blur-xl shadow-lg shadow-cyan-500/20"
+        className="fixed left-4 z-50 lg:hidden w-8 h-8 rounded-lg bg-slate-800/50 border border-cyan-500/30 backdrop-blur-xl shadow-lg shadow-cyan-500/20 flex items-center justify-center"
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
-        animate={isOpen ? { x: 276, backgroundColor: "rgba(15, 23, 42, 0.9)" } : { x: 0 }}
+        animate={isOpen ? { x: 276 } : { x: 0 }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
+        style={{ top: '45px' }} // status bar (24px) + center of main header (21px) - half button (16px) = 29px, but 45px centers it better
       >
         <motion.div
-          className="w-full h-full flex items-center justify-center"
           animate={{ rotate: isOpen ? 180 : 0 }}
           transition={{ type: "spring", stiffness: 300, damping: 30 }}
         >

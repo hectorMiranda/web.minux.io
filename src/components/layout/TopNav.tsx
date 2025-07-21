@@ -68,9 +68,12 @@ export const TopNav = ({ onMenuToggle }: TopNavProps) => {
         </div>
 
         {/* Main Header */}
-        <div className="h-10 px-4 flex items-center justify-between relative">
+        <div className="h-10 px-4 flex items-center relative">
+          {/* Left spacer for hamburger button - no need to position it here since MobileNavigation handles it */}
+          <div className="w-8 flex-shrink-0" />
+          
           {/* System Info - Centered */}
-          <div className="absolute inset-0 flex items-center justify-center">
+          <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">
             <motion.div 
               className="flex items-center gap-2"
               initial={{ opacity: 0, y: -10 }}
@@ -83,23 +86,15 @@ export const TopNav = ({ onMenuToggle }: TopNavProps) => {
             </motion.div>
           </div>
 
-          {/* Action Buttons - Right side */}
-          <div className="ml-auto flex items-center gap-2 relative z-10 h-full">
-            <motion.div
-              className="w-8 h-8 rounded-lg bg-slate-800/50 border border-cyan-500/30 flex items-center justify-center"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
+          {/* Action Buttons - Right side, perfectly aligned */}
+          <div className="ml-auto flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-slate-800/50 border border-cyan-500/30 flex items-center justify-center hover:bg-slate-700/50 transition-colors">
               <ThemeToggle />
-            </motion.div>
+            </div>
             
-            <motion.div
-              className="w-8 h-8 rounded-lg bg-slate-800/50 border border-cyan-500/30 flex items-center justify-center"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
+            <div className="w-8 h-8 rounded-lg bg-slate-800/50 border border-cyan-500/30 flex items-center justify-center hover:bg-slate-700/50 transition-colors">
               <UserPanel />
-            </motion.div>
+            </div>
           </div>
         </div>
       </div>
@@ -122,10 +117,14 @@ export const TopNav = ({ onMenuToggle }: TopNavProps) => {
           </div>
         </div>
         
-        <div className="flex items-center gap-4 flex-shrink-0">
-          <ThemeToggle />
+        <div className="flex items-center gap-3 flex-shrink-0">
+          <div className="w-8 h-8 flex items-center justify-center">
+            <ThemeToggle />
+          </div>
           <div className="h-6 w-px bg-gradient-to-b from-transparent via-cyan-500/30 to-transparent" />
-          <UserPanel />
+          <div className="w-8 h-8 flex items-center justify-center">
+            <UserPanel />
+          </div>
         </div>
       </div>
     </>

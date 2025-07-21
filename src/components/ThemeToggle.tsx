@@ -26,10 +26,10 @@ export const ThemeToggle = () => {
   const currentColor = colorSchemes.find(c => c.value === colorScheme);
 
   return (
-    <div className="relative w-full h-full">
+    <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-center w-full h-full transition-colors"
+        className="flex items-center justify-center w-6 h-6 transition-colors"
         aria-label="Theme settings"
       >
         <Palette 
