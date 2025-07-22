@@ -13,8 +13,8 @@ export const Dashboard = () => {
   });
 
   return (
-    <div className="min-h-screen bg-black text-white p-3 sm:p-6">
-      <div className="max-w-7xl mx-auto">
+    <div className="h-full w-full p-3 sm:p-6">
+      <div className="max-w-7xl mx-auto h-full">
         {/* Header */}
         <header className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 sm:mb-8 gap-4">
           <div className="min-w-0">

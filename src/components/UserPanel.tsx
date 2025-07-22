@@ -39,7 +39,7 @@ export const UserPanel = () => {
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-center w-6 h-6 transition-all duration-200 group"
+        className="flex items-center justify-center w-8 h-8 transition-all duration-200 group hover:bg-slate-700/30 rounded-lg"
         aria-label="User menu"
       >
         {/* Profile Picture or Icon */}
@@ -56,7 +56,7 @@ export const UserPanel = () => {
               }}
             />
           ) : null}
-          <User className={`w-3 h-3 ${photoURL ? 'hidden' : ''}`} />
+          <User className={`w-4 h-4 ${photoURL ? 'hidden' : ''}`} />
         </div>
       </button>
 
@@ -67,14 +67,14 @@ export const UserPanel = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-30"
+              className="fixed inset-0 z-[50]"
               onClick={() => setIsOpen(false)}
             />
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: -10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: -10 }}
-              className="absolute right-0 mt-3 w-80 rounded-xl bg-gradient-to-b from-slate-900/95 to-slate-950/95 backdrop-blur-xl border border-cyan-500/20 shadow-2xl shadow-cyan-500/20 z-40"
+              className="absolute right-0 mt-3 w-80 max-w-[calc(100vw-2rem)] rounded-xl bg-gradient-to-b from-slate-900/95 to-slate-950/95 backdrop-blur-xl border border-cyan-500/20 shadow-2xl shadow-cyan-500/20 z-[60]"
             >
               <div className="p-6">
                 {/* Enhanced Profile Header */}

@@ -247,11 +247,11 @@ export default function ConsolePage() {
   };
 
   return (
-    <div className="h-full">
+    <div className="h-full w-full p-3 sm:p-4 lg:p-6">
       <motion.div 
         ref={terminalRef}
-        className={`h-full rounded-lg bg-[#0A192F] border border-white/10 overflow-hidden ${
-          isFullscreen ? 'fixed inset-0 rounded-none' : ''
+        className={`h-full w-full rounded-lg bg-[#0A192F] border border-white/10 overflow-hidden ${
+          isFullscreen ? 'fixed inset-0 rounded-none z-50' : ''
         }`}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -285,7 +285,7 @@ export default function ConsolePage() {
         {/* Terminal Content */}
         <div 
           className={`font-mono text-sm p-4 space-y-1 ${
-            isFullscreen ? 'h-[calc(100vh-48px)]' : 'h-[calc(100vh-6rem)]'
+            isFullscreen ? 'h-[calc(100vh-48px)]' : 'h-[calc(100%-48px)]'
           } overflow-auto scrollbar-hide`}
           onClick={() => inputRef.current?.focus()}
         >

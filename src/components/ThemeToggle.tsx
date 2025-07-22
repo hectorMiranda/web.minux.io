@@ -29,11 +29,11 @@ export const ThemeToggle = () => {
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-center w-6 h-6 transition-colors"
+        className="flex items-center justify-center w-8 h-8 transition-colors hover:bg-slate-700/30 rounded-lg"
         aria-label="Theme settings"
       >
         <Palette 
-          className="w-4 h-4" 
+          className="w-5 h-5" 
           style={{ color: currentColor?.color }}
         />
       </button>
@@ -45,14 +45,14 @@ export const ThemeToggle = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-30"
+              className="fixed inset-0 z-[40]"
               onClick={() => setIsOpen(false)}
             />
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="absolute right-0 mt-2 w-48 rounded-lg bg-[#0A192F] border border-white/10 shadow-lg z-40"
+              className="absolute right-0 mt-2 w-48 rounded-lg bg-[#0A192F] border border-white/10 shadow-lg z-[50]"
             >
               <div className="p-2">
                 <div className="mb-2">

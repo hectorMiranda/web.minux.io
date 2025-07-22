@@ -88,19 +88,19 @@ export const TopNav = ({ onMenuToggle }: TopNavProps) => {
 
           {/* Action Buttons - Right side, perfectly aligned */}
           <div className="ml-auto flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-slate-800/50 border border-cyan-500/30 flex items-center justify-center hover:bg-slate-700/50 transition-colors">
+            <div className="w-10 h-10 rounded-lg bg-slate-800/50 border border-cyan-500/30 flex items-center justify-center hover:bg-slate-700/50 transition-colors">
               <ThemeToggle />
             </div>
             
-            <div className="w-8 h-8 rounded-lg bg-slate-800/50 border border-cyan-500/30 flex items-center justify-center hover:bg-slate-700/50 transition-colors">
+            <div className="w-10 h-10 rounded-lg bg-slate-800/50 border border-cyan-500/30 flex items-center justify-center hover:bg-slate-700/50 transition-colors relative">
               <UserPanel />
             </div>
           </div>
         </div>
       </div>
 
-      {/* Desktop Top Bar */}
-      <div className="hidden lg:block h-14 border-b border-cyan-500/20 px-6 flex items-center justify-between bg-gradient-to-r from-slate-950/95 via-slate-900/95 to-slate-950/95 backdrop-blur-xl shadow-lg shadow-cyan-500/5">
+      {/* Desktop Top Bar - Always visible on desktop */}
+      <div className="hidden md:flex h-14 border-b border-cyan-500/20 px-6 items-center justify-between bg-gradient-to-r from-slate-950/95 via-slate-900/95 to-slate-950/95 backdrop-blur-xl shadow-lg shadow-cyan-500/5">
         <div className="flex items-center gap-6 flex-1 min-w-0">
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-2 h-2 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 animate-pulse flex-shrink-0" />
@@ -118,11 +118,11 @@ export const TopNav = ({ onMenuToggle }: TopNavProps) => {
         </div>
         
         <div className="flex items-center gap-3 flex-shrink-0">
-          <div className="w-8 h-8 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-lg bg-slate-800/80 border border-cyan-500/40 flex items-center justify-center hover:bg-slate-700/50 transition-colors shadow-lg">
             <ThemeToggle />
           </div>
           <div className="h-6 w-px bg-gradient-to-b from-transparent via-cyan-500/30 to-transparent" />
-          <div className="w-8 h-8 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-lg bg-slate-800/80 border border-cyan-500/40 flex items-center justify-center hover:bg-slate-700/50 transition-colors relative shadow-lg">
             <UserPanel />
           </div>
         </div>

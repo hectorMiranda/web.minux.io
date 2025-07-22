@@ -103,7 +103,7 @@ export default function SystemPage() {
   };
 
   return (
-    <div className="p-6">
+    <div className="h-full w-full p-6">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-2xl font-bold text-[#00ff94]">System Overview</h1>
         <div className="text-right">

@@ -29,8 +29,8 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
       
       <div className="flex-1 flex flex-col min-w-0">
         <TopNav onMenuToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)} />
-        <main className="flex-1 overflow-auto bg-gradient-to-br from-slate-950/90 via-slate-900/50 to-slate-950/90 p-3 sm:p-4 lg:p-6">
-          <div className="max-w-7xl mx-auto w-full">
+        <main className="flex-1 overflow-hidden bg-gradient-to-br from-slate-950/90 via-slate-900/50 to-slate-950/90">
+          <div className="h-full w-full">
             {children}
           </div>
         </main>
