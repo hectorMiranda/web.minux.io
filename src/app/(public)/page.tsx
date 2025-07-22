@@ -237,7 +237,7 @@ export default function LandingPage() {
                 <span className="text-2xl font-mono font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
                   MINUX
                 </span>
-                <div className="text-xs text-cyan-400/70 font-medium">v2.0</div>
+                <div className="text-xs text-cyan-400/70 font-medium">Alpha</div>
               </div>
             </motion.div>
 
